@@ -1,0 +1,39 @@
+.cancelar-container {
+  background-color: #fff0f7; /* un rosa clarito, suave */
+  border: 2px solid #ffa8d9; /* mismo tono rosa principal */
+  border-radius: 12px;
+  padding: 20px;
+  max-width: 450px;
+  margin: 40px auto;
+  font-family: "Segoe UI", sans-serif;
+  color: #5a2a5c; /* morado oscuro para texto, buen contraste */
+  box-shadow: 0 4px 8px rgba(255, 168, 217, 0.3);
+}
+
+.cancelar-container h2 {
+  color: #ffa8d9;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.cancelar-container p {
+  font-size: 1rem;
+  margin: 8px 0;
+}
+
+.btn-danger {
+  background-color: #e63946;
+  border: none;
+  padding: 10px 16px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.btn-danger:hover {
+  background-color: #b82c34;
+}

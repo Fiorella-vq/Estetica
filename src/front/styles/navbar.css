@@ -1,0 +1,36 @@
+.navbar {
+  background-color: #ffa8d9;
+  color: white;
+}
+
+.navbar-logo {
+  height: 30px;
+  margin-right: 10px;
+  margin-bottom: 7px;
+}
+
+.navbar-toggler {
+  border: none;
+  background-color: transparent;
+}
+
+.navbar-toggler-icon {
+  background-color: #fbf4f4;
+  border-radius: 5px;
+}
+
+.nav-link {
+  color: #fbf4f4;
+  transition: color 0.3s ease, background-color 0.3s ease;
+  font-weight: bold;
+}
+
+.nav-link:hover {
+  color: #8a78a7;
+}
+
+.Flor {
+  color: #fbf4f4;
+  font-weight: bold;
+  font-family: "Segoe UI", sans-serif;
+}

@@ -1,7 +1,24 @@
-/*
-    home.css: This website contains selectors only used in home.css
 
-    All pages share the styles on index.css but you should create 
-    one more css for each page that will contain the selected used 
-    on that page only (the ones not reused in other pages).
-*/
+.service-img {
+    width: 100%;
+    height: 200px; 
+    object-fit: cover; 
+  }
+  
+  
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 0%;
+    border-color: transparent;
+  }
+  
+
+  .card:hover {
+    transform: scale(1.05); 
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+    cursor: pointer; 
+  }
+  
+  body {
+    font-family: 'Segoe UI', sans-serif;
+}

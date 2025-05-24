@@ -1,0 +1,83 @@
+.Reservas {
+  background-color: #ffa8d9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px auto;
+  padding: 20px;
+  font-family: "Segoe UI", sans-serif;
+  color: #3e3e3e;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.labelFecha {
+  font-weight: bold;
+  color: #3e3e3e;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.cargando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  color: #6c0a42;
+  text-align: center;
+  padding: 0 10px;
+}
+
+.inputFecha {
+  width: 100%;
+  max-width: 280px;
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #ffa8d9;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-family: "Segoe UI", sans-serif;
+  color: #3e3e3e;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.tableReservas {
+  width: 100%;
+  min-width: 200px;
+  text-align: center;
+  font-weight: bold;
+  color: #5e5e5e;
+  font-family: "Segoe UI", sans-serif;
+  border: 2px solid #ffa8d9;
+  border-collapse: collapse;
+}
+
+.tableReservas th,
+.tableReservas td {
+  padding: 8px 12px;
+  border: 1px solid #ffa8d9;
+}
+
+/* Responsive: mejora en pantallas pequeñas */
+@media (max-width: 600px) {
+  .labelFecha {
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .tableReservas {
+    font-size: 14px;
+  }
+}

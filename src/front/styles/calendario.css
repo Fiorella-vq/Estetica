@@ -1,0 +1,251 @@
+.calendario-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    max-width: 900px;
+    margin: 40px auto;
+    background-color: #f8f8f8;
+    font-family: 'Segoe UI', sans-serif;
+    color: #333;
+}
+
+.calendario-container h2 {
+    color: #ffa8d9;
+    margin-bottom: 25px;
+    font-size: 2.2em;
+    text-align: center;
+}
+
+.calendario-container h3 {
+    color: #ffa8d9;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-size: 1.6em;
+    text-align: center;
+}
+
+.react-calendar {
+    width: 100%;
+    max-width: 400px;
+    border: none;
+  border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    font-family: inherit;
+    background-color: #ffffff;
+    padding: 10px;
+}
+
+.react-calendar__navigation button {
+    color: #ffa8d9;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.react-calendar__month-view__days__day--weekend {
+    color: #d10000;
+}
+
+.react-calendar__tile {
+    padding: 10px 6px;
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+
+.react-calendar__tile--now {
+    background-color: #ffeef8; 
+}
+
+.react-calendar__tile--active {
+    background-color: #ffa8d9 !important;
+    color: white !important;
+}
+
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+    background-color: #ffeef8 !important; 
+}
+
+.dia-pasado {
+    color: #999;
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+.react-calendar__tile:disabled {
+    background-color: #f0f0f0;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.datos-cliente {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #ffffff;
+  
+}
+
+.datos-cliente label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #ffa8d9;
+}
+
+.datos-cliente input {
+    width: calc(100% - 20px);
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.datos-cliente input::placeholder {
+    color: #aaa;
+}
+
+.horas-disponibles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.horas-disponibles-grid label {
+    background-color: #fff0f5; 
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: 1px solid #ccc;
+    color: #ffa8d9;
+    font-weight: bold;
+}
+
+.horas-disponibles-grid label:hover {
+    background-color: #f8e0ed; 
+}
+
+.horas-disponibles-grid input[type="radio"] {
+    display: none;
+}
+
+.horas-disponibles-grid input[type="radio"]:checked + label {
+    background-color: #ffa8d9;
+    color: white;
+    border-color: #ffa8d9;
+    box-shadow: 0 0 0 2px #ffa8d9;
+}
+
+.btn-confirmar {
+    background-color: #ffa8d9;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%;
+    max-width: 400px;
+    margin-top: 20px;
+}
+
+.btn-confirmar:hover {
+    background-color: #ff90c9;
+    transform: translateY(-2px);
+}
+
+.btn-confirmar:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.calendario-container p {
+    margin-top: 15px;
+    font-size: 1.1em;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .calendario-container {
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .calendario-container h2 {
+        font-size: 1.8em;
+    }
+
+    .calendario-container h3 {
+        font-size: 1.4em;
+    }
+
+    .react-calendar {
+        padding: 5px;
+    }
+
+    .react-calendar__tile {
+        font-size: 0.8em;
+        padding: 8px 4px;
+    }
+
+    .datos-cliente {
+        padding: 15px;
+    }
+
+    .datos-cliente input {
+        padding: 8px;
+    }
+
+    .horas-disponibles-grid {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 8px;
+    }
+
+    .horas-disponibles-grid label {
+        padding: 8px;
+        font-size: 0.9em;
+    }
+
+    .btn-confirmar {
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    .calendario-container {
+        padding: 10px;
+        margin: 10px auto;
+    }
+
+    .calendario-container h2 {
+        font-size: 1.6em;
+    }
+
+    .calendario-container h3 {
+        font-size: 1.2em;
+    }
+
+    .react-calendar {
+        max-width: 100%;
+    }
+
+    .horas-disponibles-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+}

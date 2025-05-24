@@ -1,4 +1,5 @@
-from flask import jsonify, url_for
+from flask import jsonify, url_for, request
+from functools import wraps
 
 class APIException(Exception):
     status_code = 400
@@ -38,4 +39,14 @@ def generate_sitemap(app):
         <p>API HOST: <script>document.write('<input style="padding: 5px; width: 300px" type="text" value="'+window.location.href+'" />');</script></p>
         <p>Start working on your project by following the <a href="https://start.4geeksacademy.com/starters/full-stack" target="_blank">Quick Start</a></p>
         <p>Remember to specify a real endpoint path like: </p>
-        <ul style="text-align: left;">"""+links_html+"</ul></div>"
+        <ul style="text-align: left;">""" + links_html + "</ul></div>"
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # Ejemplo simple: verifica un header 'X-User-Role' igual a 'admin'
+        user_role = request.headers.get('X-User-Role', None)
+        if user_role != 'admin':
+            return jsonify({'message': 'Admin access required'}), 403
+        return f(*args, **kwargs)
+    return decorated_function

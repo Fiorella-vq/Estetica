@@ -1,19 +1,58 @@
 from flask_sqlalchemy import SQLAlchemy
+import uuid
+from datetime import datetime, time
+
+from sqlalchemy import Index
 
 db = SQLAlchemy()
 
-class User(db.Model):
+class Reserva(db.Model):
+    __tablename__ = 'reserva'
+    __table_args__ = (
+        # Uso index para crear un índice único en las columnas fecha y hora
+        Index(
+            'unique_fecha_hora_active_reservas', 
+            'fecha', 'hora', 
+            unique=True, # Le dice que este índice debe ser único
+            postgresql_where=db.Column('cancelada') == False 
+        ),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(80), unique=False, nullable=False)
-    is_active = db.Column(db.Boolean(), unique=False, nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)
+    telefono = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    hora = db.Column(db.Time, nullable=False)
+    servicio = db.Column(db.String(100), nullable=True)
+    token = db.Column(db.String(50), unique=True, nullable=False)
+    cancelada = db.Column(db.Boolean, default=False)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, nombre, telefono, email, fecha, hora, servicio, token=None, cancelada=False):
+        self.nombre = nombre
+        self.telefono = telefono
+        self.email = email
+        self.fecha = fecha
+        self.hora = hora
+        self.servicio = servicio
+        self.token = token or str(uuid.uuid4())
+        self.cancelada = cancelada
 
     def __repr__(self):
-        return f'<User {self.email}>'
+        return f'<Reserva {self.fecha} {self.hora} - {self.nombre}>'
 
     def serialize(self):
         return {
             "id": self.id,
+            "nombre": self.nombre,
             "email": self.email,
-            # do not serialize the password, its a security breach
+            "telefono": self.telefono,
+            "fecha": self.fecha.isoformat(),
+            "hora": self.hora.strftime('%H:%M'),
+            "servicio": self.servicio,
+            "token": self.token,
+            "cancelada": self.cancelada,
+            "creado_en": self.creado_en.isoformat()
         }
+        
