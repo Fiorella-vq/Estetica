@@ -12,10 +12,13 @@ export const Cancelar = () => {
   useEffect(() => {
     const fetchReserva = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/reserva-por-token/${token}`);
+        const res = await fetch(
+          `http://localhost:3001/api/reserva-por-token/${token}`
+        );
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || "No se pudo cargar la reserva");
+        if (!res.ok)
+          throw new Error(data.error || "No se pudo cargar la reserva");
 
         setReserva(data.reserva);
       } catch (error) {
@@ -42,15 +45,20 @@ export const Cancelar = () => {
     if (!result.isConfirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/cancelar/${token}`, {
-        method: "PUT", // Asegurate que tu backend espera PUT, si es GET entonces cambiá esto
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/cancelar/${token}`,
+        {
+          method: "PUT",
+        }
+      );
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || "No se pudo cancelar la reserva");
+      if (!response.ok)
+        throw new Error(data.error || "No se pudo cancelar la reserva");
 
-      const fechaServicio = new Date(reserva.fecha).toLocaleDateString("es-ES", {
+      const fechaReserva = new Date(reserva.fecha + "T00:00:00");
+      const fechaServicio = fechaReserva.toLocaleDateString("es-ES", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -73,16 +81,29 @@ export const Cancelar = () => {
   return (
     <div className="cancelar-container">
       <h2>Cancelar Reserva</h2>
-      <p><strong>Nombre:</strong> {reserva.nombre}</p>
-      <p><strong>Fecha:</strong> {new Date(reserva.fecha).toLocaleDateString("es-ES", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}</p>
-      <p><strong>Hora:</strong> {reserva.hora}</p>
-      <p><strong>Servicio:</strong> {reserva.servicio}</p>
-      <p><strong>Correo:</strong> {reserva.email}</p>
+      <p>
+        <strong>Nombre:</strong> {reserva.nombre}
+      </p>
+      <p>
+        <p>
+          <strong>Fecha:</strong>{" "}
+          {new Date(reserva.fecha + "T00:00:00").toLocaleDateString("es-ES", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+      </p>
+      <p>
+        <strong>Hora:</strong> {reserva.hora}
+      </p>
+      <p>
+        <strong>Servicio:</strong> {reserva.servicio}
+      </p>
+      <p>
+        <strong>Correo:</strong> {reserva.email}
+      </p>
       <button className="btn" onClick={cancelarReserva}>
         Cancelar reserva
       </button>

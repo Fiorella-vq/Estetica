@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from api.models import db, Reserva
+from api.models import db, Reserva, Bloqueo
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import random
@@ -19,6 +19,7 @@ CORS(api, origins=["http://localhost:3000"], supports_credentials=True)
 SECRET_KEY = os.getenv('SECRET_KEY', 'mi_clave_secreta_super_segura')
 
 def generar_jwt(payload, expiracion_minutos=60):
+    payload = payload.copy()
     payload['exp'] = datetime.utcnow() + timedelta(minutes=expiracion_minutos)
     return jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
@@ -35,15 +36,19 @@ def verificar_jwt(token):
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
+        # Permitir solicitudes OPTIONS sin autenticación para CORS preflight
+        if request.method == 'OPTIONS':
+            return '', 204
+
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return jsonify({'error': 'Token faltante o mal formado'}), 401
-        
+
         token = auth_header[7:]
         decoded = verificar_jwt(token)
         if not decoded or decoded.get('role') != 'admin':
             return jsonify({'error': 'Token inválido o no autorizado'}), 401
-        
+
         return f(*args, **kwargs)
     return wrapper
 
@@ -81,7 +86,6 @@ def enviar_email_smtp(destino, asunto, mensaje):
         return False, str(e)
 
 # --- RUTAS PÚBLICAS ---
-
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
@@ -95,7 +99,7 @@ def crear_reserva():
     except ValueError:
         return jsonify({'error': 'Formato de fecha u hora inválido'}), 400
 
-    if fecha < datetime.now().date():
+    if fecha < datetime.utcnow().date():
         return jsonify({'error': 'No se pueden hacer reservas en el pasado'}), 400
 
     reserva_existente = Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first()
@@ -190,16 +194,7 @@ def obtener_reservas():
         query = query.filter_by(email=email)
 
     reservas = query.all()
-    resultado = [dict(
-        id=r.id,
-        nombre=r.nombre,
-        telefono=r.telefono,
-        email=r.email,
-        fecha=r.fecha.isoformat(),
-        hora=r.hora.strftime('%H:%M'),
-        servicio=r.servicio,
-        token=r.token
-    ) for r in reservas]
+    resultado = [r.serialize() for r in reservas]
 
     return jsonify({'reservas': resultado}), 200
 
@@ -234,8 +229,8 @@ def login_admin():
     admin_password = os.getenv("ADMIN_PASSWORD", "123456789")
 
     if email == admin_email and password == admin_password:
-        token = generar_jwt({'email': email, 'role': 'admin'})
-        return jsonify({'message': 'Inicio de sesión exitoso', 'token': token}), 200
+        token = generar_jwt({'email': email, 'role': 'admin'}, expiracion_minutos=1440)
+        return jsonify({'token': token}), 200
     else:
         return jsonify({'error': 'Credenciales inválidas'}), 401
 
@@ -252,53 +247,64 @@ def obtener_reservas_admin():
         return jsonify({'error': 'Formato de fecha inválido'}), 400
 
     reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
-    resultado = [dict(
-        id=r.id,
-        nombre=r.nombre,
-        telefono=r.telefono,
-        email=r.email,
-        fecha=r.fecha.isoformat(),
-        hora=r.hora.strftime('%H:%M'),
-        servicio=r.servicio,
-        token=r.token,
-        cancelada=r.cancelada,
-        creado_en=(r.creado_en.isoformat() if hasattr(r, 'creado_en') and r.creado_en else None)
-    ) for r in reservas]
+    resultado = [r.serialize() for r in reservas]
 
     return jsonify({'reservas': resultado}), 200
 
-@api.route('/admin/reservas/<int:reserva_id>', methods=['DELETE'])
+@api.route('/admin/reservas/<int:id>', methods=['DELETE'])
 @admin_required
-def eliminar_reserva_admin(reserva_id):
-    reserva = Reserva.query.get(reserva_id)
+def eliminar_reserva_admin(id):
+    reserva = Reserva.query.get(id)
     if not reserva:
         return jsonify({'error': 'Reserva no encontrada'}), 404
 
     try:
         db.session.delete(reserva)
         db.session.commit()
-        return jsonify({'message': 'Reserva eliminada con éxito'}), 200
+        return jsonify({'message': 'Reserva eliminada correctamente'}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error eliminando reserva admin: {e}", exc_info=True)
-        return jsonify({'error': 'Error eliminando la reserva', 'detail': str(e)}), 500
-
-
+        current_app.logger.error(f"Error eliminando reserva: {e}", exc_info=True)
+        return jsonify({'error': 'Error al eliminar la reserva', 'detail': str(e)}), 500
 
 @api.route("/admin/bloqueos", methods=["GET", "POST", "OPTIONS"])
+@admin_required
 def bloqueos():
     if request.method == "OPTIONS":
-        return ""
+        return "", 204
+
     if request.method == "GET":
-        fecha = request.args.get("fecha")
-        
-        return jsonify({"bloqueos": []})
+        bloqueos = Bloqueo.query.all()
+        bloqueos_serializados = [b.serialize() for b in bloqueos]
+        return jsonify(bloqueos_serializados), 200
+
     if request.method == "POST":
-        data = request.json
-        # crear bloqueo
-        return jsonify({"message": "Bloqueo creado"}), 201
+        data = request.get_json()
+        fecha = data.get("fecha")
+        hora = data.get("hora")
+        bloqueado = data.get("bloqueado")
 
+        if not fecha or not hora or bloqueado is None:
+            return jsonify({"error": "Faltan campos obligatorios"}), 400
 
+        try:
+            fecha_dt = datetime.strptime(fecha, "%Y-%m-%d").date()
+            hora_dt = datetime.strptime(hora, "%H:%M").time()
+        except ValueError:
+            return jsonify({"error": "Formato de fecha u hora inválido"}), 400
 
+        bloqueo = Bloqueo.query.filter_by(fecha=fecha_dt, hora=hora_dt).first()
 
+        if bloqueo:
+            bloqueo.bloqueado = bloqueado
+        else:
+            bloqueo = Bloqueo(fecha=fecha_dt, hora=hora_dt, bloqueado=bloqueado)
+            db.session.add(bloqueo)
 
+        try:
+            db.session.commit()
+            return jsonify({"message": "Bloqueo actualizado correctamente"}), 200
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error guardando bloqueo: {e}", exc_info=True)
+            return jsonify({"error": "Error al guardar bloqueo", "detail": str(e)}), 500

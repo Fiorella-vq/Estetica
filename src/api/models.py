@@ -9,12 +9,11 @@ db = SQLAlchemy()
 class Reserva(db.Model):
     __tablename__ = 'reserva'
     __table_args__ = (
-        # Uso index para crear un índice único en las columnas fecha y hora
         Index(
             'unique_fecha_hora_active_reservas', 
             'fecha', 'hora', 
-            unique=True, # Le dice que este índice debe ser único
-            postgresql_where=db.Column('cancelada') == False 
+            unique=True,
+            postgresql_where=db.Column('cancelada') == False
         ),
     )
 
@@ -56,3 +55,29 @@ class Reserva(db.Model):
             "creado_en": self.creado_en.isoformat()
         }
         
+class Bloqueo(db.Model):
+    __tablename__ = 'bloqueo'
+    __table_args__ = (
+        Index('unique_fecha_hora_bloqueo', 'fecha', 'hora', unique=True),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, nullable=False)
+    hora = db.Column(db.Time, nullable=False)
+    bloqueado = db.Column(db.Boolean, nullable=False, default=True)
+
+    def __init__(self, fecha, hora, bloqueado=True):
+        self.fecha = fecha
+        self.hora = hora
+        self.bloqueado = bloqueado
+
+    def __repr__(self):
+        return f'<Bloqueo {self.fecha} {self.hora} Bloqueado: {self.bloqueado}>'
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "fecha": self.fecha.isoformat(),
+            "hora": self.hora.strftime('%H:%M'),
+            "bloqueado": self.bloqueado,
+        }

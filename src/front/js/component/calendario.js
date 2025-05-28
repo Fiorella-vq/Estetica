@@ -17,7 +17,6 @@ export const Calendario = () => {
   const [telefono, setTelefono] = useState("");
   const [emailCliente, setEmailCliente] = useState("");
 
-  
   const horas = [
     "08:00",
     "09:00",
@@ -31,17 +30,14 @@ export const Calendario = () => {
     "17:00",
   ];
 
-
   const formatearHora = (hora) => {
     const [h, m] = hora.split(":");
     return h.padStart(2, "0") + ":" + (m ? m.padStart(2, "0") : "00");
   };
 
- 
   const cargarHorasDisponibles = async (nuevaFecha) => {
     try {
       const fechaISO = nuevaFecha.toISOString().slice(0, 10);
-      const dia = nuevaFecha.getDate();
 
       const response = await fetch(
         `http://localhost:3001/api/reservas?fecha=${fechaISO}`
@@ -51,23 +47,35 @@ export const Calendario = () => {
 
       const data = await response.json();
 
-   
       const reservasDelDia = data.reservas || [];
+      const horasOcupadas = reservasDelDia.map((r) => formatearHora(r.hora));
 
-     const horasOcupadas = reservasDelDia.map((r) => formatearHora(r.hora));
-
-  
-      const horasDia = dia % 2 === 0 ? horas.slice(0, 5) : horas.slice(5);
-      const horasDiaFormateadas = horasDia.map(formatearHora);
+   
+      const horasDiaFormateadas = horas.map(formatearHora);
 
   
-      const libres = horasDiaFormateadas.filter(
+      let libres = horasDiaFormateadas.filter(
         (hora) => !horasOcupadas.includes(hora)
       );
 
+      const hoy = new Date();
+      const esHoy =
+        nuevaFecha.getFullYear() === hoy.getFullYear() &&
+        nuevaFecha.getMonth() === hoy.getMonth() &&
+        nuevaFecha.getDate() === hoy.getDate();
+
+      
+      if (esHoy) {
+        const horaActual = hoy.getHours();
+        const minutoActual = hoy.getMinutes();
+        libres = libres.filter((hora) => {
+          const [h, m] = hora.split(":").map(Number);
+          return h > horaActual || (h === horaActual && m > minutoActual);
+        });
+      }
+
       setHorasDisponibles(libres);
 
-    
       if (!libres.includes(horaSeleccionada)) {
         setHoraSeleccionada(null);
       }
@@ -83,11 +91,9 @@ export const Calendario = () => {
     }
   };
 
-
   useEffect(() => {
     cargarHorasDisponibles(fecha);
   }, [fecha]);
-
 
   const manejarFecha = (nuevaFecha) => {
     setFecha(nuevaFecha);
@@ -96,7 +102,6 @@ export const Calendario = () => {
   const manejarRadioChange = (e) => {
     setHoraSeleccionada(e.target.value);
   };
-
 
   const confirmarReserva = async () => {
     if (
@@ -113,7 +118,6 @@ export const Calendario = () => {
       return;
     }
 
-   
     if (!/\S+@\S+\.\S+/.test(emailCliente)) {
       Swal.fire(
         "Atención",
@@ -137,21 +141,18 @@ export const Calendario = () => {
       try {
         const fechaISO = fecha.toISOString().slice(0, 10);
 
-        const crearResponse = await fetch(
-          "http://localhost:3001/api/reservas",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fecha: fechaISO,
-              hora: horaSeleccionada,
-              nombre,
-              telefono,
-              email: emailCliente,
-              servicio,
-            }),
-          }
-        );
+        const crearResponse = await fetch("http://localhost:3001/api/reservas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fecha: fechaISO,
+            hora: horaSeleccionada,
+            nombre,
+            telefono,
+            email: emailCliente,
+            servicio,
+          }),
+        });
 
         if (!crearResponse.ok) {
           const errorData = await crearResponse.json();
@@ -166,16 +167,13 @@ export const Calendario = () => {
           "success"
         );
 
-       
         setNombre("");
         setTelefono("");
         setEmailCliente("");
         setHoraSeleccionada(null);
 
-       
         cargarHorasDisponibles(fecha);
 
-     
         navigate("/");
       } catch (error) {
         Swal.fire("Error", error.message, "error");
@@ -185,7 +183,6 @@ export const Calendario = () => {
     }
   };
 
-
   const deshabilitarDiasPasados = ({ date, view }) => {
     if (view === "month") {
       const hoy = new Date();
@@ -194,7 +191,6 @@ export const Calendario = () => {
     }
     return false;
   };
-
 
   const asignarClaseCalendario = ({ date, view }) => {
     const hoy = new Date();

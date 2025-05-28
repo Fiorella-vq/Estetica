@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const HORARIOS = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -45,14 +46,13 @@ export const AdminReservas = () => {
     fetchData(selectedDate);
   }, [selectedDate]);
 
-  // Quitar horario (bloquearlo)
   const handleBloquearHorario = async (hora) => {
     const formattedDate = selectedDate.toISOString().split("T")[0];
     try {
       const res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha: formattedDate, hora, motivo: "Bloqueado manualmente" }),
+        body: JSON.stringify({ fecha: formattedDate, hora, bloqueado: true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error bloqueando horario");
@@ -63,7 +63,6 @@ export const AdminReservas = () => {
     }
   };
 
-  // Quitar bloqueo (liberar horario)
   const handleQuitarBloqueo = async (bloqueoId) => {
     try {
       const res = await fetch(`http://localhost:3001/api/admin/bloqueos/${bloqueoId}`, {
@@ -79,7 +78,6 @@ export const AdminReservas = () => {
     }
   };
 
-  // Determinar si un horario está reservado o bloqueado
   const estaReservado = (hora) => reservas.some(r => r.hora === hora);
   const estaBloqueado = (hora) => bloqueos.some(b => b.hora === hora);
 
@@ -87,55 +85,71 @@ export const AdminReservas = () => {
 
   return (
     <div className="container mt-5">
-      <h3>Administrar Horarios</h3>
-      <label>Seleccionar fecha:</label>
-      <DatePicker
-        selected={selectedDate}
-        onChange={date => setSelectedDate(date)}
-        dateFormat="yyyy-MM-dd"
-        className="form-control mb-3"
-      />
+      <h3 className="mb-4">Administrar Horarios</h3>
+      <div className="row">
+        {/* Columna calendario */}
+        <div className="col-md-4 mb-4">
+          <label className="form-label fw-semibold">Seleccionar fecha:</label>
+          <DatePicker
+            selected={selectedDate}
+            onChange={date => setSelectedDate(date)}
+            dateFormat="yyyy-MM-dd"
+            className="form-control"
+            minDate={new Date()}
+          />
+        </div>
 
-      <ul className="list-group">
-        {HORARIOS.map(hora => {
-          const reservado = estaReservado(hora);
-          const bloqueado = estaBloqueado(hora);
-          const bloqueoData = bloqueos.find(b => b.hora === hora);
+        {/* Columna horarios */}
+        <div className="col-md-8">
+          <ul
+            className="list-group"
+            style={{ maxHeight: "480px", overflowY: "auto", border: "1px solid #ddd", borderRadius: "5px" }}
+          >
+            {HORARIOS.map(hora => {
+              const reservado = estaReservado(hora);
+              const bloqueado = estaBloqueado(hora);
+              const bloqueoData = bloqueos.find(b => b.hora === hora);
 
-          return (
-            <li
-              key={hora}
-              className={`list-group-item d-flex justify-content-between align-items-center ${
-                reservado ? "list-group-item-danger" : bloqueado ? "list-group-item-warning" : ""
-              }`}
-            >
-              <span>{hora}</span>
-              <div>
-                {reservado && <span>Reservado</span>}
-                {!reservado && bloqueado && (
-                  <>
-                    <span>Bloqueado</span>
-                    <button
-                      className="btn btn-sm btn-outline-danger ms-2"
-                      onClick={() => handleQuitarBloqueo(bloqueoData.id)}
-                    >
-                      Quitar bloqueo
-                    </button>
-                  </>
-                )}
-                {!reservado && !bloqueado && (
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => handleBloquearHorario(hora)}
-                  >
-                    Bloquear horario
-                  </button>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+              return (
+                <li
+                  key={hora}
+                  className={`list-group-item d-flex justify-content-between align-items-center ${
+                    reservado
+                      ? "list-group-item-danger"
+                      : bloqueado
+                      ? "list-group-item-secondary"
+                      : ""
+                  }`}
+                >
+                  <span>{hora}</span>
+                  <div>
+                    {reservado && <span className="fw-bold text-white">Reservado</span>}
+                    {!reservado && bloqueado && (
+                      <>
+                        <span className="fw-semibold">Bloqueado</span>
+                        <button
+                          className="btn btn-sm btn-outline-success ms-2"
+                          onClick={() => handleQuitarBloqueo(bloqueoData.id)}
+                        >
+                          Activar horario
+                        </button>
+                      </>
+                    )}
+                    {!reservado && !bloqueado && (
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => handleBloquearHorario(hora)}
+                      >
+                        Bloquear horario
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 };
