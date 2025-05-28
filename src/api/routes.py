@@ -81,6 +81,7 @@ def enviar_email_smtp(destino, asunto, mensaje):
         return False, str(e)
 
 # --- RUTAS PÚBLICAS ---
+
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
@@ -148,7 +149,7 @@ def obtener_reserva_por_token(token):
         }
     }), 200
 
-@api.route('/cancelar/<string:token>', methods=['GET'])
+@api.route('/cancelar/<string:token>', methods=['PUT'])
 def cancelar_reserva_por_token(token):
     reserva = Reserva.query.filter_by(token=token, cancelada=False).first()
     if not reserva:
