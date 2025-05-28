@@ -50,10 +50,8 @@ export const Calendario = () => {
       const reservasDelDia = data.reservas || [];
       const horasOcupadas = reservasDelDia.map((r) => formatearHora(r.hora));
 
-   
       const horasDiaFormateadas = horas.map(formatearHora);
 
-  
       let libres = horasDiaFormateadas.filter(
         (hora) => !horasOcupadas.includes(hora)
       );
@@ -64,7 +62,6 @@ export const Calendario = () => {
         nuevaFecha.getMonth() === hoy.getMonth() &&
         nuevaFecha.getDate() === hoy.getDate();
 
-      
       if (esHoy) {
         const horaActual = hoy.getHours();
         const minutoActual = hoy.getMinutes();
@@ -141,18 +138,21 @@ export const Calendario = () => {
       try {
         const fechaISO = fecha.toISOString().slice(0, 10);
 
-        const crearResponse = await fetch("http://localhost:3001/api/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fecha: fechaISO,
-            hora: horaSeleccionada,
-            nombre,
-            telefono,
-            email: emailCliente,
-            servicio,
-          }),
-        });
+        const crearResponse = await fetch(
+          "http://localhost:3001/api/reservas",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fecha: fechaISO,
+              hora: horaSeleccionada,
+              nombre,
+              telefono,
+              email: emailCliente,
+              servicio,
+            }),
+          }
+        );
 
         if (!crearResponse.ok) {
           const errorData = await crearResponse.json();
@@ -174,7 +174,16 @@ export const Calendario = () => {
 
         cargarHorasDisponibles(fecha);
 
-        navigate("/");
+        navigate("/pagos", {
+          state: {
+            nombre,
+            email: emailCliente,
+            telefono,
+            fecha: fecha.toISOString().slice(0, 10),
+            hora: horaSeleccionada,
+            servicio,
+          },
+        });
       } catch (error) {
         Swal.fire("Error", error.message, "error");
       }

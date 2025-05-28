@@ -10,6 +10,67 @@ from email.mime.multipart import MIMEMultipart
 import os
 from functools import wraps
 import jwt
+# import mercadopago
+
+# # --- CONFIGURACIÓN DE MERCADOPAGO --
+
+
+
+# mp_access_token = os.getenv("MP_ACCESS_TOKEN")
+# if not mp_access_token:
+#     raise ValueError("Falta la variable de entorno MP_ACCESS_TOKEN")
+# sdk = mercadopago.SDK(mp_access_token)
+
+# # --- Blueprint ---
+
+# pago_bp = Blueprint("pago_bp", __name__)
+
+# # --- RUTA: Crear preferencia de pago ---
+# @pago_bp.route("/pagos", methods=["POST"])
+# def crear_pago():
+#     data = request.get_json()
+
+#     try:
+#         preference_data = {
+#             "items": [
+#                 {
+#                     "title": data["servicio"],
+#                     "quantity": 1,
+#                     "unit_price": float(data.get("precio", 1000.00)),
+#                 }
+#             ],
+#             "payer": {
+#                 "name": data["nombre"],
+#                 "email": data["email"]
+#             },
+#             "back_urls": {
+#                 "success": "http://localhost:3000/exito",
+#                 "failure": "http://localhost:3000/error",
+#                 "pending": "http://localhost:3000/pendiente"
+#             },
+#             "auto_return": "approved",
+#         }
+
+#         preference_response = sdk.preference().create(preference_data)
+#         init_point = preference_response["response"]["init_point"]
+#         return jsonify({"init_point": init_point}), 200
+
+#     except Exception as e:
+#         print("Error al crear preferencia:", e)
+#         return jsonify({"error": "No se pudo crear la preferencia de pago"}), 500
+
+
+# # --- RUTA: Obtener información de un pago por ID ---
+# @pago_bp.route("/api/pago/<payment_id>", methods=["GET"])
+# def obtener_pago(payment_id):
+#     try:
+#         payment = sdk.payment().get(payment_id)
+#         return jsonify(payment["response"]), 200
+#     except Exception as e:
+#         print("Error al obtener pago:", e)
+#         return jsonify({"error": str(e)}), 500
+
+
 
 # --- CONFIGURACIÓN DEL BLUEPRINT Y CORS ---
 api = Blueprint('api', __name__)
@@ -36,7 +97,7 @@ def verificar_jwt(token):
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        # Permitir solicitudes OPTIONS sin autenticación para CORS preflight
+        
         if request.method == 'OPTIONS':
             return '', 204
 

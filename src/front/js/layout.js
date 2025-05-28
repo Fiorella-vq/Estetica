@@ -22,6 +22,7 @@ import { Calendario } from "./component/calendario";
 import { AdminReservas } from "./component/adminReservas";
 import { LoginAdmin } from "./component/loginAdmin";
 import { Cancelar} from "./component/cancelar";
+import { Pagos } from "./component/pagos";
 
 
 const shouldHideLayout = (pathname) =>
@@ -63,6 +64,7 @@ const Layout = () => {
                     <Route path="/adminReservas" element={<AdminReservas />} />
                     <Route path="/loginAdmin" element={<LoginAdmin />} />
                     <Route path="/cancelar/:token" element={<Cancelar />} />
+                    <Route path="/pagos" element={<Pagos />} />
                     <Route path="*" element={<h1>Not found!</h1>} />
                 </Routes>
                 <FooterComponent /> 
