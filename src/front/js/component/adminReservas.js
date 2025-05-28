@@ -10,6 +10,12 @@ const HORARIOS = [
   "18:00", "18:30", "19:00"
 ];
 
+// Función para normalizar hora formato "HH:mm"
+const formatHora = (horaString) => {
+  if (!horaString) return "";
+  return horaString.length >= 5 ? horaString.slice(0, 5) : horaString;
+};
+
 export const AdminReservas = () => {
   const [reservas, setReservas] = useState([]);
   const [bloqueos, setBloqueos] = useState([]);
@@ -33,6 +39,10 @@ export const AdminReservas = () => {
       const reservasData = await reservaRes.json();
       const bloqueosData = await bloqueoRes.json();
 
+      // Opcional: logs para depurar
+      console.log("Reservas recibidas:", reservasData.reservas);
+      console.log("Bloqueos recibidos:", bloqueosData.bloqueos);
+
       setReservas(reservasData.reservas || []);
       setBloqueos(bloqueosData.bloqueos || []);
     } catch (error) {
@@ -51,13 +61,26 @@ export const AdminReservas = () => {
     try {
       const res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ fecha: formattedDate, hora, bloqueado: true }),
+        headers: { 
+          Authorization: `Bearer ${token}`, 
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify({ 
+          fecha: formattedDate, 
+          hora: hora, 
+          bloqueado: true
+        }),
       });
+
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error || "Error bloqueando horario");
+
       Swal.fire("Hecho", `Horario ${hora} bloqueado`, "success");
+
+      // Recarga bloqueos y reservas para mantener la UI sincronizada
       fetchData(selectedDate);
+
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
@@ -72,14 +95,17 @@ export const AdminReservas = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error quitando bloqueo");
       Swal.fire("Hecho", "Bloqueo eliminado", "success");
+
+      // Recarga bloqueos y reservas
       fetchData(selectedDate);
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
   };
 
-  const estaReservado = (hora) => reservas.some(r => r.hora === hora);
-  const estaBloqueado = (hora) => bloqueos.some(b => b.hora === hora);
+  // Funciones para verificar si está reservado o bloqueado, normalizando horas
+  const estaReservado = (hora) => reservas.some(r => formatHora(r.hora) === hora);
+  const estaBloqueado = (hora) => bloqueos.some(b => formatHora(b.hora) === hora);
 
   if (loading) return <div>Cargando...</div>;
 
@@ -108,7 +134,7 @@ export const AdminReservas = () => {
             {HORARIOS.map(hora => {
               const reservado = estaReservado(hora);
               const bloqueado = estaBloqueado(hora);
-              const bloqueoData = bloqueos.find(b => b.hora === hora);
+              const bloqueoData = bloqueos.find(b => formatHora(b.hora) === hora);
 
               return (
                 <li
@@ -124,23 +150,25 @@ export const AdminReservas = () => {
                   <span>{hora}</span>
                   <div>
                     {reservado && <span className="fw-bold text-white">Reservado</span>}
-                    {!reservado && bloqueado && (
+
+                    {!reservado && bloqueado && bloqueoData && (
                       <>
                         <span className="fw-semibold">Bloqueado</span>
                         <button
                           className="btn btn-sm btn-outline-success ms-2"
                           onClick={() => handleQuitarBloqueo(bloqueoData.id)}
                         >
-                          Activar horario
+                          Desbloquear
                         </button>
                       </>
                     )}
+
                     {!reservado && !bloqueado && (
                       <button
                         className="btn btn-sm btn-outline-primary"
                         onClick={() => handleBloquearHorario(hora)}
                       >
-                        Bloquear horario
+                        Bloquear
                       </button>
                     )}
                   </div>
@@ -153,3 +181,4 @@ export const AdminReservas = () => {
     </div>
   );
 };
+

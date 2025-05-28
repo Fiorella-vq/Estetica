@@ -234,6 +234,7 @@ def login_admin():
     else:
         return jsonify({'error': 'Credenciales inválidas'}), 401
 
+
 @api.route('/admin/reservas', methods=['GET'])
 @admin_required
 def obtener_reservas_admin():
@@ -251,6 +252,7 @@ def obtener_reservas_admin():
 
     return jsonify({'reservas': resultado}), 200
 
+
 @api.route('/admin/reservas/<int:id>', methods=['DELETE'])
 @admin_required
 def eliminar_reserva_admin(id):
@@ -267,16 +269,27 @@ def eliminar_reserva_admin(id):
         current_app.logger.error(f"Error eliminando reserva: {e}", exc_info=True)
         return jsonify({'error': 'Error al eliminar la reserva', 'detail': str(e)}), 500
 
+
 @api.route("/admin/bloqueos", methods=["GET", "POST", "OPTIONS"])
 @admin_required
-def bloqueos():
+def manejar_bloqueos():
     if request.method == "OPTIONS":
+        # Responder preflight CORS
         return "", 204
 
     if request.method == "GET":
-        bloqueos = Bloqueo.query.all()
+        fecha_str = request.args.get("fecha")
+        if not fecha_str:
+            return jsonify({"error": "Debe proporcionar una fecha"}), 400
+
+        try:
+            fecha_dt = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"error": "Formato de fecha inválido"}), 400
+
+        bloqueos = Bloqueo.query.filter_by(fecha=fecha_dt, bloqueado=True).all()
         bloqueos_serializados = [b.serialize() for b in bloqueos]
-        return jsonify(bloqueos_serializados), 200
+        return jsonify({"bloqueos": bloqueos_serializados}), 200
 
     if request.method == "POST":
         data = request.get_json()
@@ -285,7 +298,7 @@ def bloqueos():
         bloqueado = data.get("bloqueado")
 
         if not fecha or not hora or bloqueado is None:
-            return jsonify({"error": "Faltan campos obligatorios"}), 400
+            return jsonify({"error": "Faltan campos obligatorios: fecha, hora, bloqueado"}), 400
 
         try:
             fecha_dt = datetime.strptime(fecha, "%Y-%m-%d").date()
@@ -308,3 +321,20 @@ def bloqueos():
             db.session.rollback()
             current_app.logger.error(f"Error guardando bloqueo: {e}", exc_info=True)
             return jsonify({"error": "Error al guardar bloqueo", "detail": str(e)}), 500
+
+
+@api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
+@admin_required
+def eliminar_bloqueo(id):
+    bloqueo = Bloqueo.query.get(id)
+    if not bloqueo:
+        return jsonify({"error": "Bloqueo no encontrado"}), 404
+
+    try:
+        db.session.delete(bloqueo)
+        db.session.commit()
+        return jsonify({"message": "Bloqueo eliminado correctamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error eliminando bloqueo: {e}", exc_info=True)
+        return jsonify({"error": "Error al eliminar bloqueo", "detail": str(e)}), 500
