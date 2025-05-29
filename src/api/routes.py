@@ -10,69 +10,22 @@ from email.mime.multipart import MIMEMultipart
 import os
 from functools import wraps
 import jwt
-# import mercadopago
+import mercadopago
 
-# # --- CONFIGURACIÓN DE MERCADOPAGO --
-
-
-
-# mp_access_token = os.getenv("MP_ACCESS_TOKEN")
-# if not mp_access_token:
-#     raise ValueError("Falta la variable de entorno MP_ACCESS_TOKEN")
-# sdk = mercadopago.SDK(mp_access_token)
-
-# # --- Blueprint ---
-
-# pago_bp = Blueprint("pago_bp", __name__)
-
-# # --- RUTA: Crear preferencia de pago ---
-# @pago_bp.route("/pagos", methods=["POST"])
-# def crear_pago():
-#     data = request.get_json()
-
-#     try:
-#         preference_data = {
-#             "items": [
-#                 {
-#                     "title": data["servicio"],
-#                     "quantity": 1,
-#                     "unit_price": float(data.get("precio", 1000.00)),
-#                 }
-#             ],
-#             "payer": {
-#                 "name": data["nombre"],
-#                 "email": data["email"]
-#             },
-#             "back_urls": {
-#                 "success": "http://localhost:3000/exito",
-#                 "failure": "http://localhost:3000/error",
-#                 "pending": "http://localhost:3000/pendiente"
-#             },
-#             "auto_return": "approved",
-#         }
-
-#         preference_response = sdk.preference().create(preference_data)
-#         init_point = preference_response["response"]["init_point"]
-#         return jsonify({"init_point": init_point}), 200
-
-#     except Exception as e:
-#         print("Error al crear preferencia:", e)
-#         return jsonify({"error": "No se pudo crear la preferencia de pago"}), 500
-
-
-# # --- RUTA: Obtener información de un pago por ID ---
-# @pago_bp.route("/api/pago/<payment_id>", methods=["GET"])
-# def obtener_pago(payment_id):
-#     try:
-#         payment = sdk.payment().get(payment_id)
-#         return jsonify(payment["response"]), 200
-#     except Exception as e:
-#         print("Error al obtener pago:", e)
-#         return jsonify({"error": str(e)}), 500
+# --- CONFIGURACIÓN MERCADOPAGO ---
 
 
 
-# --- CONFIGURACIÓN DEL BLUEPRINT Y CORS ---
+
+token = os.getenv("MP_ACCESS_TOKEN")
+print(f"Token cargado desde entorno: {token}")
+
+sdk = mercadopago.SDK(token)
+
+
+
+# --- BLUEPRINTS ---
+
 api = Blueprint('api', __name__)
 CORS(api, origins=["http://localhost:3000"], supports_credentials=True)
 
@@ -97,23 +50,20 @@ def verificar_jwt(token):
 def admin_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        
         if request.method == 'OPTIONS':
             return '', 204
-
         auth_header = request.headers.get('Authorization', '')
         if not auth_header.startswith('Bearer '):
             return jsonify({'error': 'Token faltante o mal formado'}), 401
-
         token = auth_header[7:]
         decoded = verificar_jwt(token)
         if not decoded or decoded.get('role') != 'admin':
             return jsonify({'error': 'Token inválido o no autorizado'}), 401
-
         return f(*args, **kwargs)
     return wrapper
 
-# --- FUNCIONES UTILITARIAS ---
+# --- UTILITARIOS ---
+
 def generate_token(length=32):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for _ in range(length))
@@ -147,6 +97,7 @@ def enviar_email_smtp(destino, asunto, mensaje):
         return False, str(e)
 
 # --- RUTAS PÚBLICAS ---
+
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
@@ -163,9 +114,15 @@ def crear_reserva():
     if fecha < datetime.utcnow().date():
         return jsonify({'error': 'No se pueden hacer reservas en el pasado'}), 400
 
+    # Verificar reserva existente no cancelada
     reserva_existente = Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first()
     if reserva_existente:
         return jsonify({'error': 'Ya existe una reserva en esa fecha y hora'}), 409
+
+    # Verificar bloqueo
+    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
+    if bloqueo_existente:
+        return jsonify({'error': 'El horario está bloqueado y no se puede reservar'}), 409
 
     token = generate_token()
     reserva = Reserva(
@@ -279,45 +236,46 @@ def enviar_email():
     else:
         return jsonify({'error': f'Error enviando correo: {info}'}), 500
 
-# --- RUTAS DE ADMIN ---
+@api.route('/reserva/ultima', methods=['GET'])
+def obtener_ultima_reserva():
+    ultima_reserva = Reserva.query.filter_by(cancelada=False).order_by(Reserva.id.desc()).first()
+    if not ultima_reserva:
+        return jsonify({'error': 'No hay reservas disponibles'}), 404
+
+    return jsonify({
+        'id': ultima_reserva.id,
+        'nombre': ultima_reserva.nombre,
+        'fecha': ultima_reserva.fecha.isoformat(),
+        'hora': ultima_reserva.hora.strftime('%H:%M'),
+        'servicio': ultima_reserva.servicio,
+        'email': ultima_reserva.email,
+    }), 200
+
+# --- RUTAS ADMIN ---
+
 @api.route('/admin/login', methods=['POST'])
 def login_admin():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
 
-    admin_email = os.getenv("ADMIN_EMAIL", "fiorellaviscardi.2412@gmail.com")
-    admin_password = os.getenv("ADMIN_PASSWORD", "123456789")
-
-    if email == admin_email and password == admin_password:
-        token = generar_jwt({'email': email, 'role': 'admin'}, expiracion_minutos=1440)
-        return jsonify({'token': token}), 200
-    else:
+    if email != os.getenv('ADMIN_EMAIL') or password != os.getenv('ADMIN_PASSWORD'):
         return jsonify({'error': 'Credenciales inválidas'}), 401
 
+    token = generar_jwt({'email': email, 'role': 'admin'}, expiracion_minutos=60*24)
+    return jsonify({'token': token}), 200
 
 @api.route('/admin/reservas', methods=['GET'])
 @admin_required
-def obtener_reservas_admin():
-    fecha_str = request.args.get('fecha')
-    if not fecha_str:
-        return jsonify({'error': 'Debe proporcionar una fecha'}), 400
-
-    try:
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
-
-    reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
+def admin_obtener_reservas():
+    reservas = Reserva.query.filter_by(cancelada=False).all()
     resultado = [r.serialize() for r in reservas]
-
     return jsonify({'reservas': resultado}), 200
 
-
-@api.route('/admin/reservas/<int:id>', methods=['DELETE'])
+@api.route('/admin/reservas/<int:reserva_id>', methods=['DELETE'])
 @admin_required
-def eliminar_reserva_admin(id):
-    reserva = Reserva.query.get(id)
+def admin_eliminar_reserva(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
     if not reserva:
         return jsonify({'error': 'Reserva no encontrada'}), 404
 
@@ -327,75 +285,102 @@ def eliminar_reserva_admin(id):
         return jsonify({'message': 'Reserva eliminada correctamente'}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error eliminando reserva: {e}", exc_info=True)
-        return jsonify({'error': 'Error al eliminar la reserva', 'detail': str(e)}), 500
+        return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
 
-
-@api.route("/admin/bloqueos", methods=["GET", "POST", "OPTIONS"])
+@api.route('/admin/bloqueos', methods=['GET'])
 @admin_required
-def manejar_bloqueos():
-    if request.method == "OPTIONS":
-        # Responder preflight CORS
-        return "", 204
+def admin_obtener_bloqueos():
+    bloqueos = Bloqueo.query.all()
+    resultado = [b.serialize() for b in bloqueos]
+    return jsonify({'bloqueos': resultado}), 200
 
-    if request.method == "GET":
-        fecha_str = request.args.get("fecha")
-        if not fecha_str:
-            return jsonify({"error": "Debe proporcionar una fecha"}), 400
-
-        try:
-            fecha_dt = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-        except ValueError:
-            return jsonify({"error": "Formato de fecha inválido"}), 400
-
-        bloqueos = Bloqueo.query.filter_by(fecha=fecha_dt, bloqueado=True).all()
-        bloqueos_serializados = [b.serialize() for b in bloqueos]
-        return jsonify({"bloqueos": bloqueos_serializados}), 200
-
-    if request.method == "POST":
-        data = request.get_json()
-        fecha = data.get("fecha")
-        hora = data.get("hora")
-        bloqueado = data.get("bloqueado")
-
-        if not fecha or not hora or bloqueado is None:
-            return jsonify({"error": "Faltan campos obligatorios: fecha, hora, bloqueado"}), 400
-
-        try:
-            fecha_dt = datetime.strptime(fecha, "%Y-%m-%d").date()
-            hora_dt = datetime.strptime(hora, "%H:%M").time()
-        except ValueError:
-            return jsonify({"error": "Formato de fecha u hora inválido"}), 400
-
-        bloqueo = Bloqueo.query.filter_by(fecha=fecha_dt, hora=hora_dt).first()
-
-        if bloqueo:
-            bloqueo.bloqueado = bloqueado
-        else:
-            bloqueo = Bloqueo(fecha=fecha_dt, hora=hora_dt, bloqueado=bloqueado)
-            db.session.add(bloqueo)
-
-        try:
-            db.session.commit()
-            return jsonify({"message": "Bloqueo actualizado correctamente"}), 200
-        except Exception as e:
-            db.session.rollback()
-            current_app.logger.error(f"Error guardando bloqueo: {e}", exc_info=True)
-            return jsonify({"error": "Error al guardar bloqueo", "detail": str(e)}), 500
-
-
-@api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
+@api.route('/admin/bloqueos', methods=['POST'])
 @admin_required
-def eliminar_bloqueo(id):
-    bloqueo = Bloqueo.query.get(id)
+def admin_crear_bloqueo():
+    data = request.get_json()
+    fecha_str = data.get('fecha')
+    hora_str = data.get('hora')
+
+    if not fecha_str or not hora_str:
+        return jsonify({'error': 'Faltan fecha u hora'}), 400
+
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+        hora = datetime.strptime(hora_str, '%H:%M').time()
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha u hora inválido'}), 400
+
+    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
+    if bloqueo_existente:
+        return jsonify({'error': 'Bloqueo ya existe para esa fecha y hora'}), 409
+
+    bloqueo = Bloqueo(fecha=fecha, hora=hora)
+    try:
+        db.session.add(bloqueo)
+        db.session.commit()
+        return jsonify({'message': 'Bloqueo creado'}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Error creando bloqueo', 'detail': str(e)}), 500
+
+@api.route('/admin/bloqueos/<int:bloqueo_id>', methods=['DELETE'])
+@admin_required
+def admin_eliminar_bloqueo(bloqueo_id):
+    bloqueo = Bloqueo.query.get(bloqueo_id)
     if not bloqueo:
-        return jsonify({"error": "Bloqueo no encontrado"}), 404
+        return jsonify({'error': 'Bloqueo no encontrado'}), 404
 
     try:
         db.session.delete(bloqueo)
         db.session.commit()
-        return jsonify({"message": "Bloqueo eliminado correctamente"}), 200
+        return jsonify({'message': 'Bloqueo eliminado'}), 200
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error eliminando bloqueo: {e}", exc_info=True)
-        return jsonify({"error": "Error al eliminar bloqueo", "detail": str(e)}), 500
+        return jsonify({'error': 'Error eliminando bloqueo', 'detail': str(e)}), 500
+    
+    
+# --- RUTAS DE PAGO ---
+
+@api.route("/pagos", methods=["POST"])
+def crear_pago():
+    data = request.get_json()
+    monto = data.get("monto")
+    email = data.get("email")
+
+    if not monto:
+        return jsonify({"error": "Falta el monto"}), 400
+
+    if not email:
+        return jsonify({"error": "Falta el email para el pago"}), 400
+
+    try:
+        preference_data = {
+            "items": [
+                {
+                    "title": "Pago de servicio",
+                    "quantity": 1,
+                    "unit_price": float(monto),
+                    "currency_id": "ARS"
+                }
+            ],
+            "payer": {
+                "email": email
+            },
+            "back_urls": {
+                "success": "http://localhost:3000/pago-exitoso",
+                "failure": "http://localhost:3000/pago-fallido",
+                "pending": "http://localhost:3000/pago-pendiente"
+            },
+            "auto_return": "approved"
+        }
+
+        preference_response = sdk.preference().create(preference_data)
+
+        return jsonify({
+            "preference_id": preference_response["response"],
+            "init_point": preference_response["response"]
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error creando preferencia de pago: {e}", exc_info=True)
+        return jsonify({"error": "Error creando la preferencia de pago", "detail": str(e)}), 500
