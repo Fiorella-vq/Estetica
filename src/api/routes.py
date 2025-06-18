@@ -101,25 +101,27 @@ def enviar_email_smtp(destino, asunto, mensaje):
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
-    required_fields = ['nombre', 'email', 'telefono', 'fecha', 'hora', 'servicio']
+    required_fields = ['nombre', 'email', 'telefono', 'fecha', 'hora', 'servicio', 'precio']
+
     if not data or not all(data.get(field) for field in required_fields):
         return jsonify({'error': 'Faltan campos obligatorios'}), 400
 
     try:
         fecha = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
         hora = datetime.strptime(data['hora'], '%H:%M').time()
+        precio = float(data['precio']) 
     except ValueError:
-        return jsonify({'error': 'Formato de fecha u hora inválido'}), 400
+        return jsonify({'error': 'Formato de fecha, hora o precio inválido'}), 400
 
     if fecha < datetime.utcnow().date():
         return jsonify({'error': 'No se pueden hacer reservas en el pasado'}), 400
 
-    # Verificar reserva existente no cancelada
+  
     reserva_existente = Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first()
     if reserva_existente:
         return jsonify({'error': 'Ya existe una reserva en esa fecha y hora'}), 409
 
-    # Verificar bloqueo
+ # Verificar bloqueo de horario
     bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
     if bloqueo_existente:
         return jsonify({'error': 'El horario está bloqueado y no se puede reservar'}), 409
@@ -132,6 +134,7 @@ def crear_reserva():
         fecha=fecha,
         hora=hora,
         servicio=data['servicio'],
+        precio=precio,   
         token=token,
         cancelada=False
     )
@@ -154,6 +157,7 @@ def crear_reserva():
         db.session.rollback()
         current_app.logger.error(f"Error guardando reserva: {e}", exc_info=True)
         return jsonify({'error': 'Error al guardar la reserva', 'detail': str(e)}), 500
+
 
 @api.route('/reserva-por-token/<string:token>', methods=['GET'])
 def obtener_reserva_por_token(token):

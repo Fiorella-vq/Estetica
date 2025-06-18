@@ -10,7 +10,7 @@ const HORARIOS = [
   "18:00", "18:30", "19:00"
 ];
 
-// Función para normalizar hora formato "HH:mm"
+
 const formatHora = (horaString) => {
   if (!horaString) return "";
   return horaString.length >= 5 ? horaString.slice(0, 5) : horaString;
@@ -78,7 +78,7 @@ export const AdminReservas = () => {
 
       Swal.fire("Hecho", `Horario ${hora} bloqueado`, "success");
 
-      // Recarga bloqueos y reservas para mantener la UI sincronizada
+    
       fetchData(selectedDate);
 
     } catch (err) {
@@ -96,14 +96,14 @@ export const AdminReservas = () => {
       if (!res.ok) throw new Error(data.error || "Error quitando bloqueo");
       Swal.fire("Hecho", "Bloqueo eliminado", "success");
 
-      // Recarga bloqueos y reservas
+   
       fetchData(selectedDate);
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
   };
 
-  // Funciones para verificar si está reservado o bloqueado, normalizando horas
+
   const estaReservado = (hora) => reservas.some(r => formatHora(r.hora) === hora);
   const estaBloqueado = (hora) => bloqueos.some(b => formatHora(b.hora) === hora);
 
@@ -113,7 +113,6 @@ export const AdminReservas = () => {
     <div className="container mt-5">
       <h3 className="mb-4">Administrar Horarios</h3>
       <div className="row">
-        {/* Columna calendario */}
         <div className="col-md-4 mb-4">
           <label className="form-label fw-semibold">Seleccionar fecha:</label>
           <DatePicker
@@ -125,7 +124,6 @@ export const AdminReservas = () => {
           />
         </div>
 
-        {/* Columna horarios */}
         <div className="col-md-8">
           <ul
             className="list-group"

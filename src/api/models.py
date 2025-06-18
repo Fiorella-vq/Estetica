@@ -27,14 +27,16 @@ class Reserva(db.Model):
     token = db.Column(db.String(50), unique=True, nullable=False)
     cancelada = db.Column(db.Boolean, default=False)
     creado_en = db.Column(db.DateTime, default=datetime.utcnow)
+    precio = db.Column(db.Float, nullable=False, default=0.0)  # <-- agregado
 
-    def __init__(self, nombre, telefono, email, fecha, hora, servicio, token=None, cancelada=False):
+    def __init__(self, nombre, telefono, email, fecha, hora, servicio, precio, token=None, cancelada=False):
         self.nombre = nombre
         self.telefono = telefono
         self.email = email
         self.fecha = fecha
         self.hora = hora
         self.servicio = servicio
+        self.precio = precio
         self.token = token or str(uuid.uuid4())
         self.cancelada = cancelada
 
@@ -50,10 +52,12 @@ class Reserva(db.Model):
             "fecha": self.fecha.isoformat(),
             "hora": self.hora.strftime('%H:%M'),
             "servicio": self.servicio,
+            "precio": self.precio,  # <-- agregado aquí también
             "token": self.token,
             "cancelada": self.cancelada,
             "creado_en": self.creado_en.isoformat()
         }
+
         
 class Bloqueo(db.Model):
     __tablename__ = 'bloqueo'

@@ -6,16 +6,21 @@ export const Pagos = () => {
   const [reserva, setReserva] = useState(null);
   const [loadingPago, setLoadingPago] = useState(false);
   const [errorReserva, setErrorReserva] = useState(null);
-  const [importe, setImporte] = useState("");
-  const [email, setEmail] = useState(""); // <-- Email para el pago
+  const [senia, setSenia] = useState("");
+  const [email, setEmail] = useState("");
 
   useEffect(() => {
     const fetchReserva = async () => {
       try {
         const response = await axios.get(`${process.env.BACKEND_URL}/reserva/ultima`);
-        setReserva(response.data);
-        if (response.data.email) {
-          setEmail(response.data.email); // precargar email si está en reserva
+        const reservaData = response.data;
+
+        setReserva(reservaData);
+        if (reservaData.email) setEmail(reservaData.email);
+
+        if (reservaData.precio) {
+          const seniaCalculada = (reservaData.precio * 0.4).toFixed(2);
+          setSenia(seniaCalculada);
         }
       } catch (error) {
         setErrorReserva("Error al obtener la reserva.");
@@ -31,8 +36,8 @@ export const Pagos = () => {
     setLoadingPago(true);
     try {
       const response = await axios.post(`${process.env.BACKEND_URL}/pagos`, {
-        monto: importe,
-        email: email, // enviamos el email ingresado
+        monto: senia,
+        email: email,
       });
 
       window.location.href = response.data.init_point;
@@ -50,7 +55,7 @@ export const Pagos = () => {
         <div className="col-12 text-center mb-4">
           <h1 className="text-primary">¡Reserva Confirmada!</h1>
           <p className="text-muted">Tu reserva ha sido registrada con éxito.</p>
-          <p>Puedes abonar ahora con Mercado Pago o hacerlo al momento del servicio.</p>
+          <p>Para confirmar tu turno, aboná el 40% del valor del servicio con Mercado Pago.</p>
         </div>
 
         <div className="col-12 col-md-8">
@@ -58,13 +63,12 @@ export const Pagos = () => {
             <div className="alert alert-danger">{errorReserva}</div>
           ) : reserva ? (
             <div className="list-group-item">
-              <strong>Servicio:</strong> {reserva.servicio}
-              <br />
-              <strong>Fecha:</strong> {reserva.fecha}
-              <br />
-              <strong>Hora:</strong> {reserva.hora}
-              <br />
-              <strong>Email:</strong> {reserva.email}
+              <strong>Servicio:</strong> {reserva.servicio}<br />
+              <strong>Fecha:</strong> {reserva.fecha}<br />
+              <strong>Hora:</strong> {reserva.hora}<br />
+              <strong>Email:</strong> {reserva.email}<br />
+              <strong>Precio total:</strong> ${reserva.precio}<br />
+              <strong>Seña (40%):</strong> ${senia}
             </div>
           ) : (
             <div className="alert alert-warning">Cargando reserva...</div>
@@ -73,20 +77,6 @@ export const Pagos = () => {
 
         {reserva && (
           <div className="col-12 col-md-8 text-center mt-4">
-            <div className="mb-3">
-              <label htmlFor="importe" className="form-label">
-                Importe a abonar ($)
-              </label>
-              <input
-                type="number"
-                className="form-control"
-                id="importe"
-                value={importe}
-                onChange={(e) => setImporte(e.target.value)}
-                placeholder="Ej: 5000"
-              />
-            </div>
-
             <div className="mb-3">
               <label htmlFor="emailPago" className="form-label">
                 Email para el pago
@@ -106,7 +96,7 @@ export const Pagos = () => {
               className="btn btn-primary btn-lg"
               disabled={loadingPago}
             >
-              {loadingPago ? "Redirigiendo..." : "Pagar con Mercado Pago"}
+              {loadingPago ? "Redirigiendo..." : `Pagar $${senia} con Mercado Pago`}
             </button>
           </div>
         )}
