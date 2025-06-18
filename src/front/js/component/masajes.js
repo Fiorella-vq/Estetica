@@ -6,9 +6,14 @@ import MasajesImage from "../../img/descontracturantes.jpg";
 export const MasajesDescontracturantes = () => {
   const navigate = useNavigate();
   
-    const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "Masajes Descontracturantes" } });
-    };
+   const handleButtonClick = () => {
+  navigate("/calendario", {
+    state: {
+      from: "Masajes Descontracturantes",
+      precio: 700,  
+    },
+  });
+};
   return (
     <div className="card2">
       <div className="image-container">

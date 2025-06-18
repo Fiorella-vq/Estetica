@@ -7,8 +7,13 @@ export const Reductores = () => {
   const navigate = useNavigate();
   
     const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "Tratamiento Reductor" } });
-    };
+  navigate("/calendario", {
+    state: {
+      from: "Tratamiento Reductor",
+      precio: 850,  
+    },
+  });
+};
 
   return (
     <div className="card2">

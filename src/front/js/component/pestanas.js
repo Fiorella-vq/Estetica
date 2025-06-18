@@ -7,9 +7,14 @@ import PestañasImage from '../../img/pestanas.webp';
 export const PerfiladoPestanas = () => {
   const navigate = useNavigate();
   
-    const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "Perfilado de Pestañas" } });
-    };
+   const handleButtonClick = () => {
+  navigate("/calendario", {
+    state: {
+      from: "Perfilado de Cejas",
+      precio: 800,  
+    },
+  });
+};
   return (
     <div className="card2">
       <div className="image-container">

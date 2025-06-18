@@ -17,6 +17,9 @@ export const Calendario = () => {
   const [telefono, setTelefono] = useState("");
   const [emailCliente, setEmailCliente] = useState("");
 
+  // Precio inicial desde location.state o 0
+  const [precioServicio, setPrecioServicio] = useState(() => location.state?.precio || 0);
+
   const horas = [
     "08:00",
     "09:00",
@@ -39,22 +42,15 @@ export const Calendario = () => {
     try {
       const fechaISO = nuevaFecha.toISOString().slice(0, 10);
 
-      const response = await fetch(
-        `http://localhost:3001/api/reservas?fecha=${fechaISO}`
-      );
-
+      const response = await fetch(`http://localhost:3001/api/reservas?fecha=${fechaISO}`);
       if (!response.ok) throw new Error("Error al obtener reservas");
 
       const data = await response.json();
-
       const reservasDelDia = data.reservas || [];
       const horasOcupadas = reservasDelDia.map((r) => formatearHora(r.hora));
-
       const horasDiaFormateadas = horas.map(formatearHora);
 
-      let libres = horasDiaFormateadas.filter(
-        (hora) => !horasOcupadas.includes(hora)
-      );
+      let libres = horasDiaFormateadas.filter((hora) => !horasOcupadas.includes(hora));
 
       const hoy = new Date();
       const esHoy =
@@ -77,11 +73,7 @@ export const Calendario = () => {
         setHoraSeleccionada(null);
       }
     } catch (error) {
-      Swal.fire(
-        "Error",
-        "No se pudieron cargar las horas disponibles.",
-        "error"
-      );
+      Swal.fire("Error", "No se pudieron cargar las horas disponibles.", "error");
       setHorasDisponibles([]);
       setHoraSeleccionada(null);
       console.error("Error al cargar horas disponibles:", error);
@@ -92,6 +84,10 @@ export const Calendario = () => {
     cargarHorasDisponibles(fecha);
   }, [fecha]);
 
+  useEffect(() => {
+    setPrecioServicio(location.state?.precio || 0);
+  }, [location.state?.precio]);
+
   const manejarFecha = (nuevaFecha) => {
     setFecha(nuevaFecha);
   };
@@ -100,27 +96,18 @@ export const Calendario = () => {
     setHoraSeleccionada(e.target.value);
   };
 
+  // Función para formatear moneda local (ARS)
+  const formatoMoneda = (valor) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(valor);
+
   const confirmarReserva = async () => {
-    if (
-      !nombre.trim() ||
-      !telefono.trim() ||
-      !emailCliente.trim() ||
-      !horaSeleccionada
-    ) {
-      Swal.fire(
-        "Atención",
-        "Por favor completá todos los campos y seleccioná una hora.",
-        "warning"
-      );
+    if (!nombre.trim() || !telefono.trim() || !emailCliente.trim() || !horaSeleccionada) {
+      Swal.fire("Atención", "Por favor completá todos los campos y seleccioná una hora.", "warning");
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(emailCliente)) {
-      Swal.fire(
-        "Atención",
-        "Por favor ingresá un correo electrónico válido.",
-        "warning"
-      );
+      Swal.fire("Atención", "Por favor ingresá un correo electrónico válido.", "warning");
       return;
     }
 
@@ -138,21 +125,19 @@ export const Calendario = () => {
       try {
         const fechaISO = fecha.toISOString().slice(0, 10);
 
-        const crearResponse = await fetch(
-          "http://localhost:3001/api/reservas",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              fecha: fechaISO,
-              hora: horaSeleccionada,
-              nombre,
-              telefono,
-              email: emailCliente,
-              servicio,
-            }),
-          }
-        );
+        const crearResponse = await fetch("http://localhost:3001/api/reservas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fecha: fechaISO,
+            hora: horaSeleccionada,
+            nombre,
+            telefono,
+            email: emailCliente,
+            servicio,
+            precio: precioServicio,
+          }),
+        });
 
         if (!crearResponse.ok) {
           const errorData = await crearResponse.json();
@@ -167,6 +152,18 @@ export const Calendario = () => {
           "success"
         );
 
+        // Guardar datos en variables antes de limpiar para enviar a la siguiente pantalla
+        const reservaParaPago = {
+          nombre,
+          email: emailCliente,
+          telefono,
+          fecha: fechaISO,
+          hora: horaSeleccionada,
+          servicio,
+          precio: precioServicio,
+        };
+
+        // Limpiar formulario
         setNombre("");
         setTelefono("");
         setEmailCliente("");
@@ -174,16 +171,7 @@ export const Calendario = () => {
 
         cargarHorasDisponibles(fecha);
 
-        navigate("/pagos", {
-          state: {
-            nombre,
-            email: emailCliente,
-            telefono,
-            fecha: fecha.toISOString().slice(0, 10),
-            hora: horaSeleccionada,
-            servicio,
-          },
-        });
+        navigate("/pagos", { state: reservaParaPago });
       } catch (error) {
         Swal.fire("Error", error.message, "error");
       }
@@ -213,6 +201,9 @@ export const Calendario = () => {
   return (
     <div className="calendario-container">
       <h2>{location.state?.from || "Servicio"}</h2>
+      <p>
+        Precio: <strong>{formatoMoneda(precioServicio)}</strong>
+      </p>
       <Calendar
         onChange={manejarFecha}
         value={fecha}
@@ -279,11 +270,7 @@ export const Calendario = () => {
               {hora}
             </label>
           ))}
-          <button
-            className="btn"
-            onClick={confirmarReserva}
-            disabled={!horaSeleccionada}
-          >
+          <button className="btn" onClick={confirmarReserva} disabled={!horaSeleccionada}>
             Confirmar turno
           </button>
         </>

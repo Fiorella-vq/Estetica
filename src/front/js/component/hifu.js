@@ -6,9 +6,14 @@ import HifuImage from "../../img/hifu.jpg";
 export const Hifu = () => {
   const navigate = useNavigate();
   
-    const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "HIFU" } });
-    };
+  const handleButtonClick = () => {
+  navigate("/calendario", {
+    state: {
+      from: "Hifu",
+      precio: 3000,  
+    },
+  });
+};
   return (
     <div className="card2">
       <div className="image-container">

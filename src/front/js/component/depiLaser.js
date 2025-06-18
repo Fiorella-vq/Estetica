@@ -1,14 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/services.css";
 import Laser from "../../img/depilaser.png";
 
+const zonasConPrecio = [
+  { nombre: "Piernas", precio: 1000 },
+  { nombre: "Axilas", precio: 500 },
+  { nombre: "Cavado", precio: 700 },
+  { nombre: "Rostro", precio: 800 },
+  { nombre: "Brazos", precio: 900 },
+  // agregar zonas
+];
+
 export const Depilaser = () => {
   const navigate = useNavigate();
-  
-    const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "Depilación Láser" } });
-    };
+  const [zonaSeleccionada, setZonaSeleccionada] = useState(zonasConPrecio[0]);
+
+  const handleZonaChange = (e) => {
+    const zona = zonasConPrecio.find((z) => z.nombre === e.target.value);
+    setZonaSeleccionada(zona);
+  };
+
+  const handleButtonClick = () => {
+    navigate("/calendario", {
+      state: {
+        from: `Depilación Láser - ${zonaSeleccionada.nombre}`,
+        precio: zonaSeleccionada.precio,
+      },
+    });
+  };
+
   return (
     <div className="card2">
       <div className="image-container">
@@ -23,45 +44,23 @@ export const Depilaser = () => {
           distintas zonas del cuerpo con tecnología láser. Resultados visibles
           desde la primera sesión. Ideal para hombres y mujeres.
         </p>
+
         <p>
-          <strong>Duración por sesión:</strong> Aproximadamente entre 30 a 60
-          minutos, según la zona.
+          <strong>Precio:</strong> Depende de la zona seleccionada
         </p>
-        <p>
-          <strong>Duración del tratamiento:</strong> De 6 a 10 sesiones,
-          dependiendo del tipo de vello y la zona tratada.
-        </p>
-        <p>
-          <strong>Frecuencia:</strong> Cada 4 a 6 semanas.
-        </p>
-        <p>
-          <strong>Precio:</strong> A consultar según la zona.
-        </p>
-        <p>
-          <strong>Zonas incluidas:</strong> Piernas, axilas, cavado, rostro,
-          brazos, entre otras.
-        </p>
-        <p>
-          <strong>Recomendaciones:</strong> Evitar exposición solar en la zona
-          tratada 48 horas antes y después del tratamiento. No usar cremas
-          autobronceantes ni productos irritantes.
-        </p>
-        <p>
-          <strong>Contraindicaciones:</strong> No recomendado para personas con
-          piel bronceada, embarazadas, en periodo de lactancia, o con ciertas
-          condiciones médicas (consultar previamente).
-        </p>
-        <p>
-          <strong>Resultados esperados:</strong> Reducción del vello en un 80% a
-          90% luego de varias sesiones. Piel más suave y sin irritaciones.
-        </p>
+
+        <label htmlFor="zona">Elegí la zona:</label>
+        <select id="zona" value={zonaSeleccionada.nombre} onChange={handleZonaChange}>
+          {zonasConPrecio.map((zona) => (
+            <option key={zona.nombre} value={zona.nombre}>
+              {zona.nombre} - ${zona.precio}
+            </option>
+          ))}
+        </select>
       </div>
-       <div className="btn-container">
-        <button
-          className="btn"
-          onClick={handleButtonClick}
-        >
-       Agendate!
+      <div className="btn-container">
+        <button className="btn" onClick={handleButtonClick}>
+          Agendate!
         </button>
       </div>
     </div>

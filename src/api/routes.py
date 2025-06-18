@@ -13,23 +13,16 @@ import jwt
 import mercadopago
 
 # --- CONFIGURACIÓN MERCADOPAGO ---
-
-
-
-
 token = os.getenv("MP_ACCESS_TOKEN")
-print(f"Token cargado desde entorno: {token}")
-
+if not token:
+    current_app.logger.error("MP_ACCESS_TOKEN no configurado en el entorno")
 sdk = mercadopago.SDK(token)
 
-
-
-# --- BLUEPRINTS ---
-
+# --- BLUEPRINT ---
 api = Blueprint('api', __name__)
 CORS(api, origins=["http://localhost:3000"], supports_credentials=True)
 
-# --- CONFIGURACIÓN JWT ---
+# --- JWT ---
 SECRET_KEY = os.getenv('SECRET_KEY', 'mi_clave_secreta_super_segura')
 
 def generar_jwt(payload, expiracion_minutos=60):
@@ -98,6 +91,23 @@ def enviar_email_smtp(destino, asunto, mensaje):
 
 # --- RUTAS PÚBLICAS ---
 
+@api.route('/precio-servicio', methods=['POST'])
+def precio_servicio():
+    data = request.get_json()
+    servicio = data.get('servicio', '').lower()
+
+    precios = {
+        "depilación láser": 3500,
+        "pestañas": 4800,
+        "masajes descontracturantes": 4000,
+    }
+
+    precio = precios.get(servicio)
+    if precio is None:
+        return jsonify({'error': 'Servicio no encontrado'}), 404
+
+    return jsonify({'precio': precio}), 200
+
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
@@ -109,19 +119,17 @@ def crear_reserva():
     try:
         fecha = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
         hora = datetime.strptime(data['hora'], '%H:%M').time()
-        precio = float(data['precio']) 
+        precio = float(data['precio'])
     except ValueError:
         return jsonify({'error': 'Formato de fecha, hora o precio inválido'}), 400
 
     if fecha < datetime.utcnow().date():
         return jsonify({'error': 'No se pueden hacer reservas en el pasado'}), 400
 
-  
     reserva_existente = Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first()
     if reserva_existente:
         return jsonify({'error': 'Ya existe una reserva en esa fecha y hora'}), 409
 
- # Verificar bloqueo de horario
     bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
     if bloqueo_existente:
         return jsonify({'error': 'El horario está bloqueado y no se puede reservar'}), 409
@@ -134,7 +142,7 @@ def crear_reserva():
         fecha=fecha,
         hora=hora,
         servicio=data['servicio'],
-        precio=precio,   
+        precio=precio,
         token=token,
         cancelada=False
     )
@@ -157,7 +165,6 @@ def crear_reserva():
         db.session.rollback()
         current_app.logger.error(f"Error guardando reserva: {e}", exc_info=True)
         return jsonify({'error': 'Error al guardar la reserva', 'detail': str(e)}), 500
-
 
 @api.route('/reserva-por-token/<string:token>', methods=['GET'])
 def obtener_reserva_por_token(token):
@@ -240,20 +247,20 @@ def enviar_email():
     else:
         return jsonify({'error': f'Error enviando correo: {info}'}), 500
 
-@api.route('/reserva/ultima', methods=['GET'])
+@api.route("/api/reserva/ultima", methods=["GET"])
 def obtener_ultima_reserva():
-    ultima_reserva = Reserva.query.filter_by(cancelada=False).order_by(Reserva.id.desc()).first()
-    if not ultima_reserva:
-        return jsonify({'error': 'No hay reservas disponibles'}), 404
-
-    return jsonify({
-        'id': ultima_reserva.id,
-        'nombre': ultima_reserva.nombre,
-        'fecha': ultima_reserva.fecha.isoformat(),
-        'hora': ultima_reserva.hora.strftime('%H:%M'),
-        'servicio': ultima_reserva.servicio,
-        'email': ultima_reserva.email,
-    }), 200
+    reserva = Reserva.query.order_by(Reserva.id.desc()).first()
+    if reserva:
+        return jsonify({
+            "id": reserva.id,
+            "servicio": reserva.servicio,
+            "fecha": reserva.fecha.isoformat() if hasattr(reserva.fecha, 'isoformat') else reserva.fecha,
+            "hora": reserva.hora.strftime('%H:%M'),
+            "email": reserva.email,
+            "precio": reserva.precio,
+        })
+    else:
+        return jsonify({"error": "No hay reservas"}), 404
 
 # --- RUTAS ADMIN ---
 
@@ -341,8 +348,7 @@ def admin_eliminar_bloqueo(bloqueo_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Error eliminando bloqueo', 'detail': str(e)}), 500
-    
-    
+
 # --- RUTAS DE PAGO ---
 
 @api.route("/pagos", methods=["POST"])
@@ -359,30 +365,38 @@ def crear_pago():
 
     try:
         preference_data = {
-            "items": [
-                {
-                    "title": "Pago de servicio",
-                    "quantity": 1,
-                    "unit_price": float(monto),
-                    "currency_id": "ARS"
-                }
-            ],
-            "payer": {
-                "email": email
-            },
-            "back_urls": {
-                "success": "http://localhost:3000/pago-exitoso",
-                "failure": "http://localhost:3000/pago-fallido",
-                "pending": "http://localhost:3000/pago-pendiente"
-            },
-            "auto_return": "approved"
+    "items": [
+        {
+            "title": "Pago de servicio",
+            "quantity": 1,
+            "unit_price": float(monto),
+            "currency_id": "ARS"
         }
+    ],
+    "payer": {
+        "email": email
+    },
+    "back_url": {  
+        "success": "http://localhost:3000/pago-exitoso",
+        "failure": "http://localhost:3000/pago-fallido",
+        "pending": "http://localhost:3000/pago-pendiente"
+    },
+    "auto_return": "approved"
+}
 
         preference_response = sdk.preference().create(preference_data)
 
+        response_data = preference_response.get("response", {})
+        preference_id = response_data.get("id")
+        init_point = response_data.get("init_point")
+
+        if not preference_id or not init_point:
+            current_app.logger.error(f"Respuesta inesperada de MercadoPago: {preference_response}")
+            return jsonify({"error": "Error inesperado creando la preferencia de pago"}), 500
+
         return jsonify({
-            "preference_id": preference_response["response"],
-            "init_point": preference_response["response"]
+            "preference_id": preference_id,
+            "init_point": init_point
         }), 200
 
     except Exception as e:

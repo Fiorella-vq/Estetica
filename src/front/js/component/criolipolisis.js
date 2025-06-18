@@ -7,8 +7,13 @@ export const Criolipolisis = () => {
   const navigate = useNavigate();
 
   const handleButtonClick = () => {
-    navigate("/calendario", { state: { from: "Criolipolisis" } });
-  };
+  navigate("/calendario", {
+    state: {
+      from: "Criolipolisis",
+      precio: 2500,  
+    },
+  });
+};
   return (
     <div className="card2">
       <div className="image-container">

@@ -6,9 +6,15 @@ import CejasImage from "../../img/cejas.jpg";
 export const PerfiladoCejas = () => {
   const navigate = useNavigate();
   
-    const handleButtonClick = () => {
-      navigate("/calendario", { state: { from: "Perfilado de Cejas" } });
-    };
+   const handleButtonClick = () => {
+  navigate("/calendario", {
+    state: {
+      from: "Perfilado de Cejas",
+      precio: 500,  
+    },
+  });
+};
+
   return (
     <div className="card2">
       <div className="image-container">
