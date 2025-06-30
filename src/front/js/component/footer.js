@@ -1,34 +1,38 @@
-import React, { Component } from "react";
+import React from "react";
 import '../../styles/footer.css';
 
 export const Footer = () => {
     return (
         <footer className="footer-container">
-            <div className="footer-content">
-                <div className="contact-container">
-                    <h5 className="my-3">Contacto</h5>
+            <h5 className="footer-contact-title mb-3">Contacto</h5>
+            <div className="footer-content d-flex gap-4">
+                <a
+                    href="https://wa.me/59891744816?text=Hola,%20quiero%20más%20información"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="WhatsApp"
+                    className="contact-icon whatsapp-icon"
+                >
+                    <i className="fa-brands fa-whatsapp"></i>
+                </a>
 
-                    <div className="contact-detail">
-                        <i className="fa-brands fa-whatsapp"></i>
-                        <a href="https://wa.me/59891744816?text=Hola,%20quiero%20más%20información" target="_blank" rel="noopener noreferrer">
-						+ 598 92 080 877
+                <a
+                    href="mailto:florenciadeleon46@gmail.com"
+                    aria-label="Correo electrónico"
+                    className="contact-icon email-icon"
+                >
+                    <i className="fa-regular fa-envelope"></i>
+                </a>
 
-                        </a>
-                    </div>
-
-                    <div className="contact-detail">
-                        <i className="fa-regular fa-envelope"></i>
-                        <a href="mailto:espacionovem@gmail.com">florenciadeleon46@gmail.com
-						</a>
-                    </div>
-
-                    <div className="contact-detail">
-                        <i className="fa-brands fa-instagram"></i>
-                        <a href="https://www.instagram.com/florestetica_integral" target="_blank" rel="noopener noreferrer">
-						florestetica_integral
-                        </a>
-                    </div>
-                </div>
+                <a
+                    href="https://www.instagram.com/florestetica_integral"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="contact-icon instagram-icon"
+                >
+                    <i className="fa-brands fa-instagram"></i>
+                </a>
             </div>
         </footer>
     );

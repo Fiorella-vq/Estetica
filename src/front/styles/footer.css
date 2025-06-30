@@ -2,10 +2,50 @@
     background-color: #ffa8d9;
     color: black;
     padding: 20px;
-    max-width: 100%; 
+    max-width: 100%;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
+}
+
+.footer-contact-title {
+    color: #fff0f7;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-align: center;
+    margin-bottom: 12px;
+
+    border-bottom: 3px solid #fff0f7;
+    display: inline-block;
+    padding-bottom: 4px;
+}
+
+.footer-content {
+    display: flex;
+    gap: 30px;
+}
+
+.contact-icon i {
+    font-size: 24px;
+    transition: color 0.3s ease;
+    color: #fff0f7;
+}
+
+.contact-icon:hover i {
+    cursor: pointer;
+}
+
+
+.whatsapp-icon:hover i {
+    color: #25D366;
+}
+
+.email-icon:hover i {
+    color: #0072C6; 
+}
+
+.instagram-icon:hover i {
+    color: #C13584;
 }

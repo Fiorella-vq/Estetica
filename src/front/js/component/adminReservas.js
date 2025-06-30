@@ -10,10 +10,22 @@ const HORARIOS = [
   "18:00", "18:30", "19:00"
 ];
 
+const SERVICIOS = [
+  "Depilación Láser",
+  "Perfilado de Cejas",
+  "Masajes Descontracturantes",
+  "Criopolisis",
+  "Hifu",
+  "Perfilado de Pestañas",
+];
 
 const formatHora = (horaString) => {
   if (!horaString) return "";
   return horaString.length >= 5 ? horaString.slice(0, 5) : horaString;
+};
+
+const formatFecha = (date) => {
+  return date.toISOString().split("T")[0];
 };
 
 export const AdminReservas = () => {
@@ -25,7 +37,7 @@ export const AdminReservas = () => {
 
   const fetchData = async (date) => {
     setLoading(true);
-    const formattedDate = date.toISOString().split("T")[0];
+    const formattedDate = formatFecha(date);
     try {
       const [reservaRes, bloqueoRes] = await Promise.all([
         fetch(`http://localhost:3001/api/admin/reservas?fecha=${formattedDate}`, {
@@ -39,12 +51,13 @@ export const AdminReservas = () => {
       const reservasData = await reservaRes.json();
       const bloqueosData = await bloqueoRes.json();
 
-      // Opcional: logs para depurar
-      console.log("Reservas recibidas:", reservasData.reservas);
-      console.log("Bloqueos recibidos:", bloqueosData.bloqueos);
+      // Filtrar bloqueos por fecha por si backend no lo hace
+      const bloqueosFiltrados = (bloqueosData.bloqueos || []).filter(
+        b => b.fecha === formattedDate
+      );
 
       setReservas(reservasData.reservas || []);
-      setBloqueos(bloqueosData.bloqueos || []);
+      setBloqueos(bloqueosFiltrados);
     } catch (error) {
       Swal.fire("Error", "No se pudieron cargar los datos", "error");
     } finally {
@@ -57,7 +70,35 @@ export const AdminReservas = () => {
   }, [selectedDate]);
 
   const handleBloquearHorario = async (hora) => {
-    const formattedDate = selectedDate.toISOString().split("T")[0];
+    const { value: formValues } = await Swal.fire({
+      title: `Bloquear horario ${hora}`,
+      html: `
+        <input id="swal-nombre" class="swal2-input" placeholder="Nombre" />
+        <select id="swal-servicio" class="swal2-select" style="display:block; margin: 0 auto; width: 80%; padding: 0.5em; font-size: 1rem;">
+          <option value="">Seleccioná un servicio</option>
+          ${SERVICIOS.map(s => `<option value="${s}">${s}</option>`).join('')}
+        </select>
+      `,
+      focusConfirm: false,
+      preConfirm: () => {
+        const nombre = document.getElementById('swal-nombre').value.trim();
+        const servicio = document.getElementById('swal-servicio').value;
+        if (!nombre) {
+          Swal.showValidationMessage('Por favor, completá el nombre');
+          return null;
+        }
+        if (!servicio) {
+          Swal.showValidationMessage('Por favor, seleccioná un servicio');
+          return null;
+        }
+        return { nombre, servicio };
+      }
+    });
+
+    if (!formValues) return;
+
+    const formattedDate = formatFecha(selectedDate);
+
     try {
       const res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
         method: "POST",
@@ -68,7 +109,9 @@ export const AdminReservas = () => {
         body: JSON.stringify({ 
           fecha: formattedDate, 
           hora: hora, 
-          bloqueado: true
+          bloqueado: true,
+          nombre: formValues.nombre,
+          servicio: formValues.servicio
         }),
       });
 
@@ -76,9 +119,8 @@ export const AdminReservas = () => {
 
       if (!res.ok) throw new Error(data.error || "Error bloqueando horario");
 
-      Swal.fire("Hecho", `Horario ${hora} bloqueado`, "success");
+      Swal.fire("Hecho", `Horario ${hora} bloqueado para ${formValues.nombre}`, "success");
 
-    
       fetchData(selectedDate);
 
     } catch (err) {
@@ -86,23 +128,43 @@ export const AdminReservas = () => {
     }
   };
 
-  const handleQuitarBloqueo = async (bloqueoId) => {
+  const handleQuitarBloqueo = async (bloqueo) => {
+    if (!bloqueo) {
+      Swal.fire("Error", "Bloqueo inválido", "error");
+      return;
+    }
+
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/bloqueos/${bloqueoId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error quitando bloqueo");
-      Swal.fire("Hecho", "Bloqueo eliminado", "success");
+      let res;
+      let data;
 
-   
+      if (bloqueo.id) {
+        res = await fetch(`http://localhost:3001/api/admin/bloqueos/${bloqueo.id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        data = await res.json();
+      } else {
+        res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
+          method: "DELETE",
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ fecha: bloqueo.fecha, hora: bloqueo.hora }),
+        });
+        data = await res.json();
+      }
+
+      if (!res.ok) throw new Error(data.error || "Error quitando bloqueo");
+
+      Swal.fire("Hecho", "Bloqueo eliminado", "success");
       fetchData(selectedDate);
+
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
   };
-
 
   const estaReservado = (hora) => reservas.some(r => formatHora(r.hora) === hora);
   const estaBloqueado = (hora) => bloqueos.some(b => formatHora(b.hora) === hora);
@@ -150,15 +212,19 @@ export const AdminReservas = () => {
                     {reservado && <span className="fw-bold text-white">Reservado</span>}
 
                     {!reservado && bloqueado && bloqueoData && (
-                      <>
+                      <div>
                         <span className="fw-semibold">Bloqueado</span>
+                        <div>
+                          <small><strong>Nombre:</strong> {bloqueoData.nombre || '-'}</small><br/>
+                          <small><strong>Servicio:</strong> {bloqueoData.servicio || '-'}</small>
+                        </div>
                         <button
-                          className="btn btn-sm btn-outline-success ms-2"
-                          onClick={() => handleQuitarBloqueo(bloqueoData.id)}
+                          className="btn btn-sm btn-outline-success mt-1"
+                          onClick={() => handleQuitarBloqueo(bloqueoData)}
                         >
                           Desbloquear
                         </button>
-                      </>
+                      </div>
                     )}
 
                     {!reservado && !bloqueado && (
@@ -179,4 +245,3 @@ export const AdminReservas = () => {
     </div>
   );
 };
-

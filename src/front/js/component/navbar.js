@@ -46,14 +46,8 @@ export const Navbar = () => {
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
-              <Link
-                to="/sobreMi"
-                className="nav-link"
-                data-bs-toggle="collapse"
-                data-bs-target=".navbar-collapse.show"
-              >
-                Sobre mí
-              </Link>
+              <Link to="/sobreMi" className="nav-link">Sobre mí</Link>
+
             </li>
             <li className="nav-item">
               <Link to="/informacion-adicional" className="nav-link">

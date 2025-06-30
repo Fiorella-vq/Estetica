@@ -1,12 +1,12 @@
 .cancelar-container {
-  background-color: #fff0f7; /* un rosa clarito, suave */
-  border: 2px solid #ffa8d9; /* mismo tono rosa principal */
+  background-color: #fff0f7; 
+  border: 2px solid #ffa8d9; 
   border-radius: 12px;
   padding: 20px;
   max-width: 450px;
   margin: 40px auto;
   font-family: "Segoe UI", sans-serif;
-  color: #5a2a5c; /* morado oscuro para texto, buen contraste */
+  color: #5a2a5c; 
   box-shadow: 0 4px 8px rgba(255, 168, 217, 0.3);
 }
 

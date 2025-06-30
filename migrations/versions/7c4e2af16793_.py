@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 9e2e7a0786c6
+Revision ID: 7c4e2af16793
 Revises: 
-Create Date: 2025-05-30 15:51:22.231980
+Create Date: 2025-06-30 16:29:04.119968
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '9e2e7a0786c6'
+revision = '7c4e2af16793'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,6 +23,8 @@ def upgrade():
     sa.Column('fecha', sa.Date(), nullable=False),
     sa.Column('hora', sa.Time(), nullable=False),
     sa.Column('bloqueado', sa.Boolean(), nullable=False),
+    sa.Column('nombre', sa.String(length=100), nullable=True),
+    sa.Column('servicio', sa.String(length=100), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('bloqueo', schema=None) as batch_op:

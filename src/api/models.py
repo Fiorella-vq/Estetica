@@ -70,13 +70,15 @@ class Bloqueo(db.Model):
     hora = db.Column(db.Time, nullable=False)
     bloqueado = db.Column(db.Boolean, nullable=False, default=True)
 
-    def __init__(self, fecha, hora, bloqueado=True):
+    nombre = db.Column(db.String(100))   # <--- agregar campo nombre
+    servicio = db.Column(db.String(100)) # <--- agregar campo servicio
+
+    def __init__(self, fecha, hora, bloqueado=True, nombre=None, servicio=None):
         self.fecha = fecha
         self.hora = hora
         self.bloqueado = bloqueado
-
-    def __repr__(self):
-        return f'<Bloqueo {self.fecha} {self.hora} Bloqueado: {self.bloqueado}>'
+        self.nombre = nombre
+        self.servicio = servicio
 
     def serialize(self):
         return {
@@ -84,4 +86,7 @@ class Bloqueo(db.Model):
             "fecha": self.fecha.isoformat(),
             "hora": self.hora.strftime('%H:%M'),
             "bloqueado": self.bloqueado,
+            "nombre": self.nombre or '',
+            "servicio": self.servicio or ''
         }
+

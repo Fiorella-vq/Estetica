@@ -298,56 +298,91 @@ def admin_eliminar_reserva(reserva_id):
         db.session.rollback()
         return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
 
-@api.route('/admin/bloqueos', methods=['GET'])
-@admin_required
-def admin_obtener_bloqueos():
-    bloqueos = Bloqueo.query.all()
-    resultado = [b.serialize() for b in bloqueos]
-    return jsonify({'bloqueos': resultado}), 200
 
-@api.route('/admin/bloqueos', methods=['POST'])
+### --- RUTAS DE BLOQUEOS ---
+@api.route("/admin/bloqueos", methods=["GET"])
 @admin_required
-def admin_crear_bloqueo():
-    data = request.get_json()
-    fecha_str = data.get('fecha')
-    hora_str = data.get('hora')
-
-    if not fecha_str or not hora_str:
-        return jsonify({'error': 'Faltan fecha u hora'}), 400
+def get_bloqueos():
+    fecha_str = request.args.get("fecha")
+    if not fecha_str:
+        return jsonify({"error": "Falta la fecha"}), 400
 
     try:
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-        hora = datetime.strptime(hora_str, '%H:%M').time()
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
     except ValueError:
-        return jsonify({'error': 'Formato de fecha u hora inválido'}), 400
+        return jsonify({"error": "Formato de fecha inválido"}), 400
 
-    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
-    if bloqueo_existente:
-        return jsonify({'error': 'Bloqueo ya existe para esa fecha y hora'}), 409
+    bloqueos = Bloqueo.query.filter_by(fecha=fecha).all()
+    return jsonify({"bloqueos": [b.serialize() for b in bloqueos]}), 200
 
-    bloqueo = Bloqueo(fecha=fecha, hora=hora)
-    try:
-        db.session.add(bloqueo)
-        db.session.commit()
-        return jsonify({'message': 'Bloqueo creado'}), 201
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'Error creando bloqueo', 'detail': str(e)}), 500
 
-@api.route('/admin/bloqueos/<int:bloqueo_id>', methods=['DELETE'])
+@api.route("/admin/bloqueos", methods=["POST"])
 @admin_required
-def admin_eliminar_bloqueo(bloqueo_id):
-    bloqueo = Bloqueo.query.get(bloqueo_id)
-    if not bloqueo:
-        return jsonify({'error': 'Bloqueo no encontrado'}), 404
+def crear_bloqueo():
+    data = request.get_json()
 
     try:
+        fecha = datetime.strptime(data.get("fecha"), "%Y-%m-%d").date()
+        hora = datetime.strptime(data.get("hora"), "%H:%M").time()
+        bloqueado = data.get("bloqueado", True)
+        nombre = data.get("nombre")
+        servicio = data.get("servicio")
+
+        if not nombre or not servicio:
+            return jsonify({"error": "Faltan nombre o servicio"}), 400
+
+        existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
+        if existente:
+            return jsonify({"error": "Ya existe un bloqueo en ese horario"}), 400
+
+        nuevo_bloqueo = Bloqueo(
+            fecha=fecha,
+            hora=hora,
+            bloqueado=bloqueado,
+            nombre=nombre,
+            servicio=servicio
+        )
+        db.session.add(nuevo_bloqueo)
+        db.session.commit()
+
+        return jsonify({"mensaje": "Bloqueo creado", "bloqueo": nuevo_bloqueo.serialize()}), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
+@admin_required
+def eliminar_bloqueo_por_id(id):
+    bloqueo = Bloqueo.query.get(id)
+    if not bloqueo:
+        return jsonify({"error": "Bloqueo no encontrado"}), 404
+
+    db.session.delete(bloqueo)
+    db.session.commit()
+    return jsonify({"mensaje": "Bloqueo eliminado"}), 200
+
+
+@api.route("/admin/bloqueos", methods=["DELETE"])
+@admin_required
+def eliminar_bloqueo_por_fecha_y_hora():
+    data = request.get_json()
+    try:
+        fecha = datetime.strptime(data.get("fecha"), "%Y-%m-%d").date()
+        hora = datetime.strptime(data.get("hora"), "%H:%M").time()
+
+        bloqueo = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
+        if not bloqueo:
+            return jsonify({"error": "Bloqueo no encontrado"}), 404
+
         db.session.delete(bloqueo)
         db.session.commit()
-        return jsonify({'message': 'Bloqueo eliminado'}), 200
+        return jsonify({"mensaje": "Bloqueo eliminado"}), 200
+
     except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'Error eliminando bloqueo', 'detail': str(e)}), 500
+        return jsonify({"error": str(e)}), 500
+
+
 
 # --- RUTAS DE PAGO ---
 
