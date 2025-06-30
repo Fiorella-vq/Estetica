@@ -376,10 +376,10 @@ def crear_pago():
     "payer": {
         "email": email
     },
-    "back_url": {  
-        "success": "http://localhost:3000/pago-exitoso",
-        "failure": "http://localhost:3000/pago-fallido",
-        "pending": "http://localhost:3000/pago-pendiente"
+   "back_urls": {
+        "success": "https://www.tu-sitio/success",
+        "failure": "https://www.tu-sitio/failure",
+        "pending": "https://www.tu-sitio/pendings"
     },
     "auto_return": "approved"
 }

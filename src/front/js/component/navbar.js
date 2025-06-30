@@ -47,7 +47,7 @@ export const Navbar = () => {
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
               <Link
-                to="/sobre-mi"
+                to="/sobreMi"
                 className="nav-link"
                 data-bs-toggle="collapse"
                 data-bs-target=".navbar-collapse.show"

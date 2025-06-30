@@ -1,0 +1,41 @@
+.img-chica {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  image-rendering: auto;
+  border: 3px solid #ffa8d9;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.img-chica:hover {
+  transform: scale(1.05);
+}
+
+.titulo-sobre-mi {
+  color: #ffa8d9;
+  font-weight: 700;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.texto-sobre-mi {
+  font-size: 1.1rem;
+  color: #444;
+  line-height: 1.6;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .titulo-sobre-mi,
+  .texto-sobre-mi {
+    text-align: left;
+  }
+
+  .img-chica {
+    max-width: 500px;
+  }
+}

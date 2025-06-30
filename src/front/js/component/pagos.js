@@ -5,7 +5,7 @@ import axios from "axios";
 export const Pagos = () => {
   const location = useLocation();
 
-  // Reserva que puede venir por state o null
+ 
   const reservaInicial = location.state || null;
 
   const [reserva, setReserva] = useState(reservaInicial);
@@ -137,6 +137,7 @@ export const Pagos = () => {
             </button>
           </div>
         )}
+        {/* <div id="walletBrick_container"></div> */}
 
         <div className="col-12 col-md-8 text-center mt-5">
           <h2 className="text-primary mb-4">¿Qué deseas hacer ahora?</h2>
