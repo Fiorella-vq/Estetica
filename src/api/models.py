@@ -70,8 +70,8 @@ class Bloqueo(db.Model):
     hora = db.Column(db.Time, nullable=False)
     bloqueado = db.Column(db.Boolean, nullable=False, default=True)
 
-    nombre = db.Column(db.String(100))   # <--- agregar campo nombre
-    servicio = db.Column(db.String(100)) # <--- agregar campo servicio
+    nombre = db.Column(db.String(100))  
+    servicio = db.Column(db.String(100)) 
 
     def __init__(self, fecha, hora, bloqueado=True, nombre=None, servicio=None):
         self.fecha = fecha
@@ -90,3 +90,18 @@ class Bloqueo(db.Model):
             "servicio": self.servicio or ''
         }
 
+class Testimonio(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    comentario = db.Column(db.Text, nullable=False)
+    estrellas = db.Column(db.Integer, default=5)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'nombre': self.nombre,
+            'comentario': self.comentario,
+            'estrellas': self.estrellas,
+            'fecha': self.fecha.isoformat()
+        }

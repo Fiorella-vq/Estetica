@@ -49,18 +49,18 @@ export const Navbar = () => {
               <Link to="/sobreMi" className="nav-link">Sobre mí</Link>
 
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <Link to="/informacion-adicional" className="nav-link">
                 Información adicional
               </Link>
-            </li>
+            </li> */}
             <li className="nav-item">
               <Link to="/cuponeras" className="nav-link">
                 Cuponeras
               </Link>
             </li>
             <li className="nav-item">
-              <Link to="/horarios-disponibilidad" className="nav-link">
+              <Link to="/horariosDisponible" className="nav-link">
                 Horarios y disponibilidad
               </Link>
             </li>

@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import Depilaser from "../../img/depilaser.png";
 import PestañasImg from "../../img/pestanas.webp";
 import HifuImg from "../../img/hifu.jpg";
-import CriolipolisisImg from "../../img/Criolipólisis.jpg";
 import CejasImg from "../../img/cejas.jpg";
 import MasajesImg from "../../img/descontracturantes.jpg";
 import ReductoresImg from "../../img/reductores.jpg";
@@ -44,16 +43,6 @@ export const Home = () => {
 						<img src={HifuImg} className="card-img-top service-img" alt="HIFU" />
 						<div className="card-body">
 							<h5 className="card-title">HIFU</h5>
-						</div>
-					</div>
-				</div>
-
-
-				<div className="col-12 col-sm-6 col-md-4 col-lg-3">
-					<div className="card h-100"onClick={() => navigate("/criolipolisis")}>
-						<img src={CriolipolisisImg} className="card-img-top service-img" alt="Criolipólisis" />
-						<div className="card-body">
-							<h5 className="card-title">Criolipólisis</h5>
 						</div>
 					</div>
 				</div>

@@ -13,7 +13,6 @@ import { Footer } from "./component/footer";
 import { Depilaser } from "./component/depiLaser";
 import { PerfiladoPestanas } from "./component/pestanas";
 import { Hifu } from "./component/hifu";
-import { Criolipolisis } from "./component/criolipolisis";
 import { PerfiladoCejas } from "./component/cejas";
 import { MasajesDescontracturantes } from "./component/masajes";
 import { Reductores } from "./component/reductores";
@@ -24,6 +23,8 @@ import { LoginAdmin } from "./component/loginAdmin";
 import { Cancelar} from "./component/cancelar";
 import { Pagos } from "./component/pagos";
 import { SobreMi } from "./component/sobreMi";
+import {  HorariosDisponibilidad } from "./component/horariosDisponible";
+import { Testimonios } from "./component/testimonios";
 
 
 const shouldHideLayout = (pathname) =>
@@ -56,7 +57,6 @@ const Layout = () => {
                     <Route path="/depiLaser" element={<Depilaser />} />
                     <Route path="/pestanas" element={<PerfiladoPestanas />} />
                     <Route path="/hifu" element={<Hifu />} />
-                    <Route path="/criolipolisis" element={<Criolipolisis />} />
                     <Route path="/cejas" element={<PerfiladoCejas />} />
                     <Route path="/masajes" element={<MasajesDescontracturantes />} />
                     <Route path="/reductores" element={<Reductores />} />
@@ -67,6 +67,8 @@ const Layout = () => {
                     <Route path="/cancelar/:token" element={<Cancelar />} />
                     <Route path="/pagos" element={<Pagos />} />
                     <Route path="/sobreMi" element={<SobreMi />} />
+                    <Route path="/horariosDisponible" element={<HorariosDisponibilidad />} />
+                    <Route path="/testimonios" element={<Testimonios />} />
                     <Route path="*" element={<h1>Not found!</h1>} />
                 </Routes>
                 <FooterComponent /> 

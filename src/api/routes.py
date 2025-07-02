@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from api.models import db, Reserva, Bloqueo
+from api.models import db, Reserva, Bloqueo, Testimonio
 from flask_cors import CORS
 from datetime import datetime, timedelta
 import random
@@ -299,7 +299,7 @@ def admin_eliminar_reserva(reserva_id):
         return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
 
 
-### --- RUTAS DE BLOQUEOS ---
+### --- RUTAS DE BLOQUEOS ADMIN ---
 @api.route("/admin/bloqueos", methods=["GET"])
 @admin_required
 def get_bloqueos():
@@ -437,3 +437,60 @@ def crear_pago():
     except Exception as e:
         current_app.logger.error(f"Error creando preferencia de pago: {e}", exc_info=True)
         return jsonify({"error": "Error creando la preferencia de pago", "detail": str(e)}), 500
+
+
+## --- RUTAS DE TESTIMONIOS ---
+@api.route('/testimonios', methods=['GET'])
+def obtener_testimonios():
+    testimonios = Testimonio.query.order_by(Testimonio.fecha.desc()).all()
+    lista = []
+    for t in testimonios:
+        lista.append({
+            "id": t.id,
+            "nombre": t.nombre,
+            "comentario": t.comentario,
+            "estrellas": t.estrellas,
+            "fecha": t.fecha.strftime("%Y-%m-%d"),
+        })
+    return jsonify(lista)
+
+@api.route('/testimonios', methods=['POST'])
+def crear_testimonio():
+    data = request.get_json()
+    nombre = data.get('nombre')
+    comentario = data.get('comentario')
+    estrellas = data.get('estrellas', 5)
+
+    if not nombre or not comentario:
+        return jsonify({'error': 'Nombre y comentario son obligatorios'}), 400
+
+    nuevo_testimonio = Testimonio(
+        nombre=nombre,
+        comentario=comentario,
+        estrellas=estrellas,
+        fecha=datetime.utcnow()
+    )
+    try:
+        db.session.add(nuevo_testimonio)
+        db.session.commit()
+        return jsonify({'message': 'Testimonio creado'}), 201
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error creando testimonio: {e}")
+        return jsonify({'error': 'Error al crear testimonio'}), 500
+
+@api.route('/testimonios/<int:testimonio_id>', methods=['DELETE'])
+@admin_required
+def eliminar_testimonio(testimonio_id):
+    testimonio = Testimonio.query.get(testimonio_id)
+    if not testimonio:
+        return jsonify({'error': 'Testimonio no encontrado'}), 404
+
+    try:
+        db.session.delete(testimonio)
+        db.session.commit()
+        return jsonify({'message': 'Testimonio eliminado correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error eliminando testimonio: {e}")
+        return jsonify({'error': 'Error al eliminar testimonio'}), 500

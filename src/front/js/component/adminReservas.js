@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const HORARIOS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
-  "18:00", "18:30", "19:00"
+  "08:00", "09:00", "10:00", "11:00", "12:00",
+  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
 ];
 
 const SERVICIOS = [
@@ -32,8 +31,17 @@ export const AdminReservas = () => {
   const [reservas, setReservas] = useState([]);
   const [bloqueos, setBloqueos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const token = localStorage.getItem("token");
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
+
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/loginAdmin");
+    }
+  }, [token, navigate]);
 
   const fetchData = async (date) => {
     setLoading(true);
@@ -48,12 +56,15 @@ export const AdminReservas = () => {
         }),
       ]);
 
+      if (!reservaRes.ok || !bloqueoRes.ok) {
+        throw new Error("Error al obtener datos");
+      }
+
       const reservasData = await reservaRes.json();
       const bloqueosData = await bloqueoRes.json();
 
-      // Filtrar bloqueos por fecha por si backend no lo hace
       const bloqueosFiltrados = (bloqueosData.bloqueos || []).filter(
-        b => b.fecha === formattedDate
+        (b) => b.fecha === formattedDate
       );
 
       setReservas(reservasData.reservas || []);
@@ -76,23 +87,23 @@ export const AdminReservas = () => {
         <input id="swal-nombre" class="swal2-input" placeholder="Nombre" />
         <select id="swal-servicio" class="swal2-select" style="display:block; margin: 0 auto; width: 80%; padding: 0.5em; font-size: 1rem;">
           <option value="">Seleccioná un servicio</option>
-          ${SERVICIOS.map(s => `<option value="${s}">${s}</option>`).join('')}
+          ${SERVICIOS.map((s) => `<option value="${s}">${s}</option>`).join("")}
         </select>
       `,
       focusConfirm: false,
       preConfirm: () => {
-        const nombre = document.getElementById('swal-nombre').value.trim();
-        const servicio = document.getElementById('swal-servicio').value;
+        const nombre = document.getElementById("swal-nombre").value.trim();
+        const servicio = document.getElementById("swal-servicio").value;
         if (!nombre) {
-          Swal.showValidationMessage('Por favor, completá el nombre');
+          Swal.showValidationMessage("Por favor, completá el nombre");
           return null;
         }
         if (!servicio) {
-          Swal.showValidationMessage('Por favor, seleccioná un servicio');
+          Swal.showValidationMessage("Por favor, seleccioná un servicio");
           return null;
         }
         return { nombre, servicio };
-      }
+      },
     });
 
     if (!formValues) return;
@@ -102,16 +113,16 @@ export const AdminReservas = () => {
     try {
       const res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
         method: "POST",
-        headers: { 
-          Authorization: `Bearer ${token}`, 
-          "Content-Type": "application/json" 
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
-          fecha: formattedDate, 
-          hora: hora, 
+        body: JSON.stringify({
+          fecha: formattedDate,
+          hora: hora,
           bloqueado: true,
           nombre: formValues.nombre,
-          servicio: formValues.servicio
+          servicio: formValues.servicio,
         }),
       });
 
@@ -122,7 +133,6 @@ export const AdminReservas = () => {
       Swal.fire("Hecho", `Horario ${hora} bloqueado para ${formValues.nombre}`, "success");
 
       fetchData(selectedDate);
-
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
@@ -147,9 +157,9 @@ export const AdminReservas = () => {
       } else {
         res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
           method: "DELETE",
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({ fecha: bloqueo.fecha, hora: bloqueo.hora }),
         });
@@ -160,26 +170,59 @@ export const AdminReservas = () => {
 
       Swal.fire("Hecho", "Bloqueo eliminado", "success");
       fetchData(selectedDate);
-
     } catch (err) {
       Swal.fire("Error", err.message, "error");
     }
   };
 
-  const estaReservado = (hora) => reservas.some(r => formatHora(r.hora) === hora);
-  const estaBloqueado = (hora) => bloqueos.some(b => formatHora(b.hora) === hora);
+  const estaReservado = (hora) => reservas.some((r) => formatHora(r.hora) === hora);
+  const estaBloqueado = (hora) => bloqueos.some((b) => formatHora(b.hora) === hora);
+
+  const handleLogout = () => {
+    Swal.fire({
+      title: "¿Cerrar sesión?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, salir",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role"); 
+        navigate("/loginAdmin");
+      }
+    });
+  };
 
   if (loading) return <div>Cargando...</div>;
 
   return (
     <div className="container mt-5">
       <h3 className="mb-4">Administrar Horarios</h3>
+      <div className="mb-4 d-flex flex-column flex-sm-row gap-3">
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => navigate("/horariosDisponible")}
+        >
+          Ir a Horarios Disponibles
+        </button>
+        <button
+          className="btn btn-outline-primary"
+          onClick={() => navigate("/testimonios")}
+        >
+          Ir a Testimonios
+        </button>
+        <button className="btn btn-outline-danger ms-auto" onClick={handleLogout}>
+          Cerrar Sesión
+        </button>
+      </div>
+
       <div className="row">
         <div className="col-md-4 mb-4">
           <label className="form-label fw-semibold">Seleccionar fecha:</label>
           <DatePicker
             selected={selectedDate}
-            onChange={date => setSelectedDate(date)}
+            onChange={(date) => setSelectedDate(date)}
             dateFormat="yyyy-MM-dd"
             className="form-control"
             minDate={new Date()}
@@ -189,12 +232,17 @@ export const AdminReservas = () => {
         <div className="col-md-8">
           <ul
             className="list-group"
-            style={{ maxHeight: "480px", overflowY: "auto", border: "1px solid #ddd", borderRadius: "5px" }}
+            style={{
+              maxHeight: "480px",
+              overflowY: "auto",
+              border: "1px solid #ddd",
+              borderRadius: "5px",
+            }}
           >
-            {HORARIOS.map(hora => {
+            {HORARIOS.map((hora) => {
               const reservado = estaReservado(hora);
               const bloqueado = estaBloqueado(hora);
-              const bloqueoData = bloqueos.find(b => formatHora(b.hora) === hora);
+              const bloqueoData = bloqueos.find((b) => formatHora(b.hora) === hora);
 
               return (
                 <li
@@ -215,8 +263,13 @@ export const AdminReservas = () => {
                       <div>
                         <span className="fw-semibold">Bloqueado</span>
                         <div>
-                          <small><strong>Nombre:</strong> {bloqueoData.nombre || '-'}</small><br/>
-                          <small><strong>Servicio:</strong> {bloqueoData.servicio || '-'}</small>
+                          <small>
+                            <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                          </small>
+                          <br />
+                          <small>
+                            <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
+                          </small>
                         </div>
                         <button
                           className="btn btn-sm btn-outline-success mt-1"

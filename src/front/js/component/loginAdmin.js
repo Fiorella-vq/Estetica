@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Swal from "sweetalert2"; 
+import Swal from "sweetalert2";
 
 export const LoginAdmin = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -18,7 +18,7 @@ export const LoginAdmin = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); 
+    setLoading(true);
 
     try {
       const response = await fetch("http://localhost:3001/api/admin/login", {
@@ -30,20 +30,20 @@ export const LoginAdmin = () => {
       const data = await response.json();
 
       if (!response.ok) {
-      
         Swal.fire({
           icon: "error",
           title: "Error de inicio de sesión",
           text: data.error || "Credenciales inválidas o error en el servidor.",
         });
-        throw new Error(data.error || "Login failed"); 
+        setLoading(false);
+        return;
       }
+      
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role || "admin");
 
-      localStorage.setItem("token", data.token); 
-      navigate("/adminReservas"); 
-
+      navigate("/adminReservas");
     } catch (err) {
-     
       if (err.message === "Failed to fetch") {
         Swal.fire({
           icon: "error",
@@ -51,11 +51,10 @@ export const LoginAdmin = () => {
           text: "No se pudo conectar con el servidor. Intenta de nuevo más tarde.",
         });
       } else {
-    
         console.error("Error inesperado:", err);
       }
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -74,7 +73,7 @@ export const LoginAdmin = () => {
             className="form-control"
             required
             autoComplete="username"
-            disabled={loading} 
+            disabled={loading}
           />
         </div>
         <div className="mb-3">
@@ -89,18 +88,16 @@ export const LoginAdmin = () => {
               className="form-control"
               required
               autoComplete="current-password"
-              disabled={loading} 
+              disabled={loading}
             />
             <button
               type="button"
               className="btn btn-outline-secondary"
               onClick={togglePasswordVisibility}
               tabIndex={-1}
-              disabled={loading} 
+              disabled={loading}
             >
-              <i
-                className={`fa ${showPassword ? "fa-eye" : "fa-eye-slash"}`}
-              ></i>
+              <i className={`fa ${showPassword ? "fa-eye" : "fa-eye-slash"}`}></i>
             </button>
           </div>
         </div>
