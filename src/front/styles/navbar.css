@@ -1,7 +1,10 @@
+
 .navbar {
   background-color: #ffa8d9;
   color: white;
+  padding: 0.5rem 1rem;
 }
+
 
 .navbar-logo {
   height: 30px;
@@ -9,28 +12,47 @@
   margin-bottom: 7px;
 }
 
+
 .navbar-toggler {
   border: none;
   background-color: transparent;
+  padding: 0;
+  margin-left: auto;
 }
 
-.navbar-toggler-icon {
-  background-color: #fbf4f4;
-  border-radius: 5px;
+
+.navbar-toggler:focus,
+.navbar-toggler:active {
+  outline: none;
+  box-shadow: none;
 }
+
+
+.fa-bars {
+  color: #fbf4f4;
+  font-size: 1.5rem;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+
 
 .nav-link {
   color: #fbf4f4;
   transition: color 0.3s ease, background-color 0.3s ease;
   font-weight: bold;
+  font-family: "Segoe UI", sans-serif;
 }
 
 .nav-link:hover {
   color: #8a78a7;
 }
 
+
 .Flor {
   color: #fbf4f4;
   font-weight: bold;
   font-family: "Segoe UI", sans-serif;
+
 }
