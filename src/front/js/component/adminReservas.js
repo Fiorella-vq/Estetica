@@ -18,14 +18,14 @@ const SERVICIOS = [
   "Perfilado de Pestañas",
 ];
 
-const formatHora = (horaString) => {
+// Función para normalizar hora formato "HH:mm"
+const normalizeHora = (horaString) => {
   if (!horaString) return "";
   return horaString.length >= 5 ? horaString.slice(0, 5) : horaString;
 };
 
-const formatFecha = (date) => {
-  return date.toISOString().split("T")[0];
-};
+// Función para formato "yyyy-MM-dd"
+const formatFecha = (date) => date.toISOString().split("T")[0];
 
 export const AdminReservas = () => {
   const [reservas, setReservas] = useState([]);
@@ -35,12 +35,14 @@ export const AdminReservas = () => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const navigate = useNavigate();
 
+  // Si no hay token, redirige a login admin
   useEffect(() => {
     if (!token) {
       navigate("/loginAdmin", { replace: true });
     }
   }, [token, navigate]);
 
+  // Fetch reservas y bloqueos para la fecha seleccionada
   const fetchData = async (date) => {
     setLoading(true);
     const formattedDate = formatFecha(date);
@@ -61,6 +63,7 @@ export const AdminReservas = () => {
       const reservasData = await reservaRes.json();
       const bloqueosData = await bloqueoRes.json();
 
+      // Filtramos bloqueos para la fecha actual (por si acaso)
       const bloqueosFiltrados = (bloqueosData.bloqueos || []).filter(
         (b) => b.fecha === formattedDate
       );
@@ -82,6 +85,9 @@ export const AdminReservas = () => {
     }
   }, [selectedDate, token]);
 
+  const totalGanado = reservas.reduce((acc, r) => acc + (Number(r.precio) || 0), 0);
+
+  // Funciones para bloquear, desbloquear y eliminar reservas (tu lógica)
   const handleBloquearHorario = async (hora) => {
     const { value: formValues } = await Swal.fire({
       title: `Bloquear horario ${hora}`,
@@ -121,7 +127,7 @@ export const AdminReservas = () => {
         },
         body: JSON.stringify({
           fecha: formattedDate,
-          hora: hora,
+          hora,
           bloqueado: true,
           nombre: formValues.nombre,
           servicio: formValues.servicio,
@@ -177,8 +183,11 @@ export const AdminReservas = () => {
     }
   };
 
-  const estaReservado = (hora) => reservas.some((r) => formatHora(r.hora) === hora);
-  const estaBloqueado = (hora) => bloqueos.some((b) => formatHora(b.hora) === hora);
+  // Normalizar hora para comparar
+  const estaReservado = (hora) =>
+    reservas.some((r) => normalizeHora(r.hora) === hora);
+  const estaBloqueado = (hora) =>
+    bloqueos.some((b) => normalizeHora(b.hora) === hora);
 
   const handleEliminarReserva = async (reservaData) => {
     const confirm = await Swal.fire({
@@ -226,11 +235,14 @@ export const AdminReservas = () => {
     });
   };
 
-  if (loading) return <div>Cargando...</div>;
-
   return (
     <div className="container mt-5">
       <h3 className="mb-4">Administrar Horarios</h3>
+      <h5>
+        Ganancias por reserva de app. {formatFecha(selectedDate)}:{" "}
+        <strong>${totalGanado.toFixed(2)}</strong>
+      </h5>
+
       <div className="mb-4 d-flex flex-column flex-sm-row gap-3">
         <button
           className="btn btn-outline-primary"
@@ -254,7 +266,7 @@ export const AdminReservas = () => {
           <label className="form-label fw-semibold">Seleccionar fecha:</label>
           <DatePicker
             selected={selectedDate}
-            onChange={(date) => setSelectedDate(date)}
+            onChange={setSelectedDate}
             dateFormat="yyyy-MM-dd"
             className="form-control"
             minDate={new Date()}
@@ -262,139 +274,150 @@ export const AdminReservas = () => {
         </div>
 
         <div className="col-md-8">
-          <ul
-            className="list-group"
-            style={{
-              maxHeight: "480px",
-              overflowY: "auto",
-              border: "1px solid #ddd",
-              borderRadius: "5px",
-            }}
-          >
-            {HORARIOS.map((hora) => {
-              const reservado = estaReservado(hora);
-              const bloqueado = estaBloqueado(hora);
-              const bloqueoData = bloqueos.find((b) => formatHora(b.hora) === hora);
-              const reservaData = reservas.find((r) => formatHora(r.hora) === hora);
+          {loading ? (
+            <p>Cargando horarios...</p>
+          ) : (
+            <ul
+              className="list-group"
+              style={{
+                maxHeight: "480px",
+                overflowY: "auto",
+                border: "1px solid #ddd",
+                borderRadius: "5px",
+              }}
+            >
+              {HORARIOS.map((hora) => {
+                const reservado = estaReservado(hora);
+                const bloqueado = estaBloqueado(hora);
+                const bloqueoData = bloqueos.find(
+                  (b) => normalizeHora(b.hora) === hora
+                );
+                const reservaData = reservas.find(
+                  (r) => normalizeHora(r.hora) === hora
+                );
 
-              const ahora = new Date();
-              const esHoy =
-                selectedDate.getFullYear() === ahora.getFullYear() &&
-                selectedDate.getMonth() === ahora.getMonth() &&
-                selectedDate.getDate() === ahora.getDate();
+                const ahora = new Date();
+                const esHoy =
+                  selectedDate.getFullYear() === ahora.getFullYear() &&
+                  selectedDate.getMonth() === ahora.getMonth() &&
+                  selectedDate.getDate() === ahora.getDate();
 
-              const [h, m] = hora.split(":").map(Number);
-              const horaHorario = new Date(selectedDate);
-              horaHorario.setHours(h, m, 0, 0);
+                const [h, m] = hora.split(":").map(Number);
+                const horaHorario = new Date(selectedDate);
+                horaHorario.setHours(h, m, 0, 0);
 
-              const esHoraPasada = esHoy && horaHorario <= ahora;
+                const esHoraPasada = esHoy && horaHorario <= ahora;
 
-              return (
-                <li
-                  key={hora}
-                  className={`list-group-item d-flex justify-content-between align-items-center ${
-                    reservado
-                      ? "list-group-item-danger"
-                      : bloqueado
-                      ? "list-group-item-secondary"
-                      : ""
-                  }`}
-                >
-                  <span>{hora}</span>
-                  <div style={{ minWidth: "200px" }}>
-                    {esHoraPasada ? (
-                      <>
-                        {reservado && reservaData && (
-                          <div style={{ color: "gray" }}>
-                            <span className="fw-bold">Reservado</span>
-                            <div>
-                              <small>
-                                <strong>Cliente:</strong> {reservaData.nombre || "-"}
-                              </small>
-                              <br />
-                              <small>
-                                <strong>Servicio:</strong> {reservaData.servicio || "-"}
-                              </small>
+                return (
+                  <li
+                    key={hora}
+                    className={`list-group-item d-flex justify-content-between align-items-center ${
+                      reservado
+                        ? "list-group-item-danger"
+                        : bloqueado
+                        ? "list-group-item-secondary"
+                        : ""
+                    }`}
+                  >
+                    <span>{hora}</span>
+                    <div style={{ minWidth: "200px" }}>
+                      {esHoraPasada ? (
+                        <>
+                          {reservado && reservaData && (
+                            <div style={{ color: "gray" }}>
+                              <span className="fw-bold">Reservado</span>
+                              <div>
+                                <small>
+                                  <strong>Cliente:</strong>{" "}
+                                  {reservaData.nombre || "-"}
+                                </small>
+                                <br />
+                                <small>
+                                  <strong>Servicio:</strong>{" "}
+                                  {reservaData.servicio || "-"}
+                                </small>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {!reservado && bloqueado && bloqueoData && (
-                          <div style={{ color: "gray" }}>
-                            <span className="fw-semibold">Bloqueado</span>
-                            <div>
-                              <small>
-                                <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
-                              </small>
-                              <br />
-                              <small>
-                                <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
-                              </small>
+                          )}
+                          {!reservado && bloqueado && bloqueoData && (
+                            <div style={{ color: "gray" }}>
+                              <span className="fw-semibold">Bloqueado</span>
+                              <div>
+                                <small>
+                                  <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                                </small>
+                                <br />
+                                <small>
+                                  <strong>Servicio:</strong>{" "}
+                                  {bloqueoData.servicio || "-"}
+                                </small>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {!reservado && !bloqueado && (
-                          <div style={{ color: "gray" }}>Horario pasado</div>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {reservado && reservaData && (
-                          <div>
-                            <span className="fw-bold text-white">Reservado</span>
+                          )}
+                          {!reservado && !bloqueado && (
+                            <div style={{ color: "gray" }}>Horario pasado</div>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {reservado && reservaData && (
                             <div>
-                              <small>
-                                <strong>Cliente:</strong> {reservaData.nombre || "-"}
-                              </small>
-                              <br />
-                              <small>
-                                <strong>Servicio:</strong> {reservaData.servicio || "-"}
-                              </small>
+                              <span className="fw-bold text-white">Reservado</span>
+                              <div>
+                                <small>
+                                  <strong>Cliente:</strong> {reservaData.nombre || "-"}
+                                </small>
+                                <br />
+                                <small>
+                                  <strong>Servicio:</strong> {reservaData.servicio || "-"}
+                                </small>
+                              </div>
+                              <button
+                                className="btn btn-sm btn-outline-danger mt-1"
+                                onClick={() => handleEliminarReserva(reservaData)}
+                              >
+                                Eliminar reserva
+                              </button>
                             </div>
+                          )}
+
+                          {!reservado && bloqueado && bloqueoData && (
+                            <div>
+                              <span className="fw-semibold">Bloqueado</span>
+                              <div>
+                                <small>
+                                  <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                                </small>
+                                <br />
+                                <small>
+                                  <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
+                                </small>
+                              </div>
+                              <button
+                                className="btn btn-sm btn-outline-success mt-1"
+                                onClick={() => handleQuitarBloqueo(bloqueoData)}
+                              >
+                                Desbloquear
+                              </button>
+                            </div>
+                          )}
+
+                          {!reservado && !bloqueado && (
                             <button
-                              className="btn btn-sm btn-outline-danger mt-1"
-                              onClick={() => handleEliminarReserva(reservaData)}
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleBloquearHorario(hora)}
                             >
-                              Eliminar reserva
+                              Bloquear
                             </button>
-                          </div>
-                        )}
-
-                        {!reservado && bloqueado && bloqueoData && (
-                          <div>
-                            <span className="fw-semibold">Bloqueado</span>
-                            <div>
-                              <small>
-                                <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
-                              </small>
-                              <br />
-                              <small>
-                                <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
-                              </small>
-                            </div>
-                            <button
-                              className="btn btn-sm btn-outline-success mt-1"
-                              onClick={() => handleQuitarBloqueo(bloqueoData)}
-                            >
-                              Desbloquear
-                            </button>
-                          </div>
-                        )}
-
-                        {!reservado && !bloqueado && (
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={() => handleBloquearHorario(hora)}
-                          >
-                            Bloquear
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </div>
     </div>

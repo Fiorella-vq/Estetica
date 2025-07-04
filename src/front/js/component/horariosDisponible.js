@@ -45,57 +45,61 @@ export const HorariosDisponibilidad = () => {
   };
 
   return (
-    <div className="card2">
-      <div className="card-body">
-        <h2 className="card-title2">Horarios y Disponibilidad</h2>
-        {role === "admin" ? (
-          <>
-            <label>
-              <strong>Horarios: </strong>
-              <textarea
-                name="horarios"
-                value={info.horarios}
-                onChange={handleChange}
-                rows={2}
-                disabled={loading}
-              />
-            </label>
-            <br />
-            <label>
-              <strong>Dirección:</strong>
-              <textarea
-                name="direccion"
-                value={info.direccion}
-                onChange={handleChange}
-                rows={2}
-                disabled={loading}
-              />
-            </label>
-            <br />
-            <label>
-              <strong>Atención:</strong>
-              <textarea
-                name="atencion"
-                value={info.atencion}
-                onChange={handleChange}
-                rows={2}
-                disabled={loading}
-              />
-            </label>
-            <br />
-            <button className="btn" onClick={handleGuardar} disabled={loading}>
-              {loading ? "Guardando..." : "Guardar cambios"}
-            </button>
-          </>
-        ) : (
-          <p>
-            <strong>Horarios:</strong> {info.horarios}
-            <br />
-            <strong>Dirección:</strong> {info.direccion}
-            <br />
-            <strong>Atención:</strong> {info.atencion}
-          </p>
-        )}
+    <div className="componente-no-footer-ajustado">
+      <div className="card2">
+        <div className="card-body">
+          <h2 className="card-title2">Horarios y Disponibilidad</h2>
+          {role === "admin" ? (
+            <>
+              <label>
+                <strong>Horarios: </strong>
+                <textarea
+                  name="horarios"
+                  value={info.horarios}
+                  onChange={handleChange}
+                  rows={2}
+                  disabled={loading}
+                />
+              </label>
+              <br />
+              <label>
+                <strong>Dirección:</strong>
+                <textarea
+                  name="direccion"
+                  value={info.direccion}
+                  onChange={handleChange}
+                  rows={2}
+                  disabled={loading}
+                />
+              </label>
+              <br />
+              <label>
+                <strong>Atención:</strong>
+                <textarea
+                  name="atencion"
+                  value={info.atencion}
+                  onChange={handleChange}
+                  rows={2}
+                  disabled={loading}
+                />
+              </label>
+              <br />
+              <div className="btn-container">
+                <button className="btn" onClick={handleGuardar} disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar cambios"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>
+              <strong>Horarios:</strong> {info.horarios}
+              <br />
+              <strong>Dirección:</strong> {info.direccion}
+              <br />
+              <strong>Atención:</strong> {info.atencion}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -60,31 +60,37 @@ const Layout = () => {
 
   return (
     <BrowserRouter basename={basename}>
-      <ScrollToTop>
-        <NavbarComponent />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/demo" element={<Demo />} />
-          <Route path="/single/:theid" element={<Single />} />
-          <Route path="/depiLaser" element={<Depilaser />} />
-          <Route path="/pestanas" element={<PerfiladoPestanas />} />
-          <Route path="/hifu" element={<Hifu />} />
-          <Route path="/cejas" element={<PerfiladoCejas />} />
-          <Route path="/masajes" element={<MasajesDescontracturantes />} />
-          <Route path="/reductores" element={<Reductores />} />
-          <Route path="/cuponeras" element={<Cuponeras />} />
-          <Route path="/calendario" element={<Calendario />} />
-          <Route path="/adminReservas" element={<AdminReservas />} />
-          <Route path="/loginAdmin" element={<LoginAdmin />} />
-          <Route path="/cancelar/:token" element={<Cancelar />} />
-          <Route path="/pagos" element={<Pagos />} />
-          <Route path="/sobreMi" element={<SobreMi />} />
-          <Route path="/horariosDisponible" element={<HorariosDisponibilidad />} />
-          <Route path="/testimonios" element={<Testimonios />} />
-          <Route path="*" element={<h1>Not found!</h1>} />
-        </Routes>
-        <FooterComponent />
-      </ScrollToTop>
+      <ScrollToTop />
+      <NavbarComponent />
+
+      {/* Wrapper para que el contenido empuje el footer */}
+      <div className="wrapper">
+        <main className="content">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/demo" element={<Demo />} />
+            <Route path="/single/:theid" element={<Single />} />
+            <Route path="/depiLaser" element={<Depilaser />} />
+            <Route path="/pestanas" element={<PerfiladoPestanas />} />
+            <Route path="/hifu" element={<Hifu />} />
+            <Route path="/cejas" element={<PerfiladoCejas />} />
+            <Route path="/masajes" element={<MasajesDescontracturantes />} />
+            <Route path="/reductores" element={<Reductores />} />
+            <Route path="/cuponeras" element={<Cuponeras />} />
+            <Route path="/calendario" element={<Calendario />} />
+            <Route path="/adminReservas" element={<AdminReservas />} />
+            <Route path="/loginAdmin" element={<LoginAdmin />} />
+            <Route path="/cancelar/:token" element={<Cancelar />} />
+            <Route path="/pagos" element={<Pagos />} />
+            <Route path="/sobreMi" element={<SobreMi />} />
+            <Route path="/horariosDisponible" element={<HorariosDisponibilidad />} />
+            <Route path="/testimonios" element={<Testimonios />} />
+            <Route path="*" element={<h1>Not found!</h1>} />
+          </Routes>
+        </main>
+      </div>
+
+      <FooterComponent />
     </BrowserRouter>
   );
 };

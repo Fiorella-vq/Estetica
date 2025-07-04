@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 export const Pagos = () => {
   const location = useLocation();
 
- 
   const reservaInicial = location.state || null;
 
   const [reserva, setReserva] = useState(reservaInicial);
@@ -15,7 +15,8 @@ export const Pagos = () => {
   const [email, setEmail] = useState(reservaInicial?.email || "");
   const [errorEmail, setErrorEmail] = useState("");
 
-  const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/api";
+  const BACKEND_URL =
+    process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/api";
 
   useEffect(() => {
     if (!reserva) {
@@ -28,7 +29,9 @@ export const Pagos = () => {
           if (reservaData.email) setEmail(reservaData.email);
 
           if (reservaData.precio) {
-            const seniaCalculada = Number((reservaData.precio * 0.4).toFixed(2));
+            const seniaCalculada = Number(
+              (reservaData.precio * 0.4).toFixed(2)
+            );
             setSenia(seniaCalculada);
           }
         } catch (error) {
@@ -45,14 +48,15 @@ export const Pagos = () => {
     }
   }, [reserva, BACKEND_URL]);
 
-  // Validación simple de email
   const validarEmail = (email) => {
     return /\S+@\S+\.\S+/.test(email);
   };
 
-  // Formatear moneda local
   const formatoMoneda = (valor) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(valor);
+    new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+    }).format(valor);
 
   const handlePagar = async () => {
     if (!reserva) return;
@@ -73,8 +77,13 @@ export const Pagos = () => {
 
       window.location.href = response.data.init_point;
     } catch (error) {
-      console.error("Error al iniciar el pago:", error.response?.data || error.message);
-      alert("Hubo un error al procesar el pago. Por favor, intentá nuevamente.");
+      console.error(
+        "Error al iniciar el pago:",
+        error.response?.data || error.message
+      );
+      alert(
+        "Hubo un error al procesar el pago. Por favor, intentá nuevamente."
+      );
     } finally {
       setLoadingPago(false);
     }
@@ -86,7 +95,10 @@ export const Pagos = () => {
         <div className="col-12 text-center mb-4">
           <h1 className="text-primary">¡Reserva Confirmada!</h1>
           <p className="text-muted">Tu reserva ha sido registrada con éxito.</p>
-          <p>Para confirmar tu turno, aboná el 40% del valor del servicio con Mercado Pago.</p>
+          <p>
+            Para confirmar tu turno, aboná el 40% del valor del servicio con
+            Mercado Pago.
+          </p>
         </div>
 
         <div className="col-12 col-md-8">
@@ -125,7 +137,9 @@ export const Pagos = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tuemail@dominio.com"
               />
-              {errorEmail && <div className="invalid-feedback">{errorEmail}</div>}
+              {errorEmail && (
+                <div className="invalid-feedback">{errorEmail}</div>
+              )}
             </div>
 
             <button
@@ -133,17 +147,64 @@ export const Pagos = () => {
               className="btn btn-primary btn-lg"
               disabled={loadingPago}
             >
-              {loadingPago ? "Redirigiendo..." : `Pagar ${formatoMoneda(senia)} con Mercado Pago`}
+              {loadingPago
+                ? "Redirigiendo..."
+                : `Pagar ${formatoMoneda(senia)} con Mercado Pago`}
             </button>
           </div>
         )}
-        {/* <div id="walletBrick_container"></div> */}
 
         <div className="col-12 col-md-8 text-center mt-5">
           <h2 className="text-primary mb-4">¿Qué deseas hacer ahora?</h2>
-          <Link to="/" className="btn btn-outline-secondary">
-            Volver al Inicio
-          </Link>
+          <button
+  className="btn btn-outline-secondary"
+  onClick={async () => {
+    if (!reserva || !reserva.id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se encontró la reserva para cancelar.",
+      });
+      return;
+    }
+
+    const confirmacion = await Swal.fire({
+      title: "¿Cancelar reserva?",
+      text: "Si volvés al inicio se cancelará tu reserva y el horario quedará disponible.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, cancelar",
+      cancelButtonText: "No, volver",
+    });
+
+    if (confirmacion.isConfirmed) {
+      try {
+        // Llamada PUT para cancelar la reserva
+        await axios.put(`${BACKEND_URL}/reserva/${reserva.id}`);
+
+        await Swal.fire({
+          icon: "success",
+          title: "Reserva cancelada",
+          text: "Tu reserva fue cancelada correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        // Redirigir a inicio
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Error al cancelar la reserva:", error.response?.data || error.message);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo cancelar la reserva. Intentá nuevamente.",
+        });
+      }
+    }
+  }}
+>
+  Volver al Inicio
+</button>
         </div>
       </div>
     </div>

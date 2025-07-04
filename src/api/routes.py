@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 from api.models import db, Reserva, Bloqueo, Testimonio
 from flask_cors import CORS
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import random
 import string
 import smtplib
@@ -108,6 +108,8 @@ def precio_servicio():
 
     return jsonify({'precio': precio}), 200
 
+# --- RUTAS DE RESERVAS ---
+
 @api.route('/reservas', methods=['POST'])
 def crear_reserva():
     data = request.get_json()
@@ -130,7 +132,7 @@ def crear_reserva():
     if reserva_existente:
         return jsonify({'error': 'Ya existe una reserva en esa fecha y hora'}), 409
 
-    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
+    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora, bloqueado=True).first()
     if bloqueo_existente:
         return jsonify({'error': 'El horario está bloqueado y no se puede reservar'}), 409
 
@@ -261,6 +263,76 @@ def obtener_ultima_reserva():
         })
     else:
         return jsonify({"error": "No hay reservas"}), 404
+    
+@api.route('/reserva/<int:reserva_id>', methods=['PUT'])
+def cancelar_reserva_por_id(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva or reserva.cancelada:
+        return jsonify({'error': 'Reserva no encontrada o ya cancelada'}), 404
+
+    try:
+        reserva.cancelada = True
+        db.session.commit()
+
+        # Email al cliente
+        mensaje_cliente = (
+            f"Hola {reserva.nombre},\n\n"
+            f"Tu reserva para el servicio '{reserva.servicio}' programada para el {reserva.fecha.strftime('%d/%m/%Y')} a las {reserva.hora.strftime('%H:%M')} ha sido cancelada correctamente.\n\n"
+            "Esperamos poder atenderte en otra ocasión.\n\nSaludos cordiales."
+        )
+        enviar_email_smtp(reserva.email, "Cancelación de reserva", mensaje_cliente)
+
+        # Email a la admin
+        admin_email = os.getenv("ADMIN_EMAIL", "admin@tuservicio.com")
+        mensaje_admin = (
+            f"Reserva cancelada por el cliente:\n\n"
+            f"Nombre: {reserva.nombre}\n"
+            f"Email: {reserva.email}\n"
+            f"Servicio: {reserva.servicio}\n"
+            f"Fecha: {reserva.fecha.strftime('%d/%m/%Y')}\n"
+            f"Hora: {reserva.hora.strftime('%H:%M')}\n"
+        )
+        enviar_email_smtp(admin_email, "Reserva cancelada por cliente", mensaje_admin)
+
+        return jsonify({'message': 'Reserva cancelada correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error cancelando reserva: {e}", exc_info=True)
+        return jsonify({'error': 'Error al cancelar la reserva', 'detail': str(e)}), 500
+
+
+# --- NUEVO ENDPOINT PÚBLICO PARA HORARIOS DISPONIBLES ---
+@api.route('/horarios-disponibles', methods=['GET'])
+def horarios_disponibles():
+    fecha_str = request.args.get('fecha')
+    if not fecha_str:
+        return jsonify({"error": "Falta la fecha"}), 400
+
+    try:
+        fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
+    except ValueError:
+        return jsonify({"error": "Formato de fecha inválido"}), 400
+
+    HORARIOS = [
+        time(8,0), time(9,0), time(10,0), time(11,0), time(12,0),
+        time(13,0), time(14,0), time(15,0), time(16,0), time(17,0), time(18,0)
+    ]
+
+    bloqueos = Bloqueo.query.filter_by(fecha=fecha, bloqueado=True).all()
+    horarios_bloqueados = {b.hora for b in bloqueos}
+
+    reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
+    horarios_reservados = {r.hora for r in reservas}
+
+    horarios_disponibles = [
+        h.strftime("%H:%M") for h in HORARIOS
+        if h not in horarios_bloqueados and h not in horarios_reservados
+    ]
+
+    return jsonify({
+        "fecha": fecha_str,
+        "horarios_disponibles": horarios_disponibles
+    }), 200
 
 # --- RUTAS ADMIN ---
 
@@ -298,8 +370,6 @@ def admin_eliminar_reserva(reserva_id):
         db.session.rollback()
         return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
 
-
-### --- RUTAS DE BLOQUEOS ADMIN ---
 @api.route("/admin/bloqueos", methods=["GET"])
 @admin_required
 def get_bloqueos():
@@ -314,7 +384,6 @@ def get_bloqueos():
 
     bloqueos = Bloqueo.query.filter_by(fecha=fecha).all()
     return jsonify({"bloqueos": [b.serialize() for b in bloqueos]}), 200
-
 
 @api.route("/admin/bloqueos", methods=["POST"])
 @admin_required
@@ -350,7 +419,6 @@ def crear_bloqueo():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
 @admin_required
 def eliminar_bloqueo_por_id(id):
@@ -361,7 +429,6 @@ def eliminar_bloqueo_por_id(id):
     db.session.delete(bloqueo)
     db.session.commit()
     return jsonify({"mensaje": "Bloqueo eliminado"}), 200
-
 
 @api.route("/admin/bloqueos", methods=["DELETE"])
 @admin_required
@@ -382,8 +449,6 @@ def eliminar_bloqueo_por_fecha_y_hora():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-
 # --- RUTAS DE PAGO ---
 
 @api.route("/pagos", methods=["POST"])
@@ -400,24 +465,24 @@ def crear_pago():
 
     try:
         preference_data = {
-    "items": [
-        {
-            "title": "Pago de servicio",
-            "quantity": 1,
-            "unit_price": float(monto),
-            "currency_id": "ARS"
+            "items": [
+                {
+                    "title": "Pago de servicio",
+                    "quantity": 1,
+                    "unit_price": float(monto),
+                    "currency_id": "ARS"
+                }
+            ],
+            "payer": {
+                "email": email
+            },
+            "back_urls": {
+                "success": "https://www.tu-sitio/success",
+                "failure": "https://www.tu-sitio/failure",
+                "pending": "https://www.tu-sitio/pendings"
+            },
+            "auto_return": "approved"
         }
-    ],
-    "payer": {
-        "email": email
-    },
-   "back_urls": {
-        "success": "https://www.tu-sitio/success",
-        "failure": "https://www.tu-sitio/failure",
-        "pending": "https://www.tu-sitio/pendings"
-    },
-    "auto_return": "approved"
-}
 
         preference_response = sdk.preference().create(preference_data)
 
@@ -438,8 +503,8 @@ def crear_pago():
         current_app.logger.error(f"Error creando preferencia de pago: {e}", exc_info=True)
         return jsonify({"error": "Error creando la preferencia de pago", "detail": str(e)}), 500
 
+# --- RUTAS DE TESTIMONIOS ---
 
-## --- RUTAS DE TESTIMONIOS ---
 from flask import abort
 
 @api.route('/testimonios', methods=['GET'])
@@ -456,7 +521,7 @@ def obtener_testimonios():
 
 @api.route('/testimonios', methods=['POST'])
 def crear_testimonio():
-    data = request.get_json(force=True)  # Forzar parseo JSON
+    data = request.get_json(force=True)
     if not data:
         return jsonify({'error': 'Datos JSON inválidos o faltantes'}), 400
 
@@ -464,7 +529,6 @@ def crear_testimonio():
     comentario = data.get('comentario')
     estrellas = data.get('estrellas', 5)
 
-    # Validaciones básicas
     if not nombre or not comentario:
         return jsonify({'error': 'Nombre y comentario son obligatorios'}), 400
 
