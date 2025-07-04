@@ -1,0 +1,43 @@
+label {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  display: block;
+  color: #444;
+}
+
+textarea {
+  width: 100%; 
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+  margin-bottom: 1rem; 
+}
+
+textarea:focus {
+  border-color: #0d6efd; 
+  outline: none;
+  box-shadow: 0 0 5px rgba(13, 110, 253, 0.5);
+}
+
+.btn-container {
+  display: flex;
+  justify-content: center;  
+  align-items: center;     
+  margin-top: 20px;         
+}
+
+.btn {
+  background-color: #ffa8d9;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+}
