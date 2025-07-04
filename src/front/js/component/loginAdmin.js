@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
 export const LoginAdmin = () => {
@@ -60,7 +60,18 @@ export const LoginAdmin = () => {
 
   return (
     <div className="container mt-5" style={{ maxWidth: "400px" }}>
+      <Link
+        to="/"
+        className={`mb-3 d-inline-block text-primary text-decoration-underline ${loading ? "disabled" : ""}`}
+        style={{ cursor: loading ? "not-allowed" : "pointer" }}
+        aria-disabled={loading}
+        tabIndex={loading ? -1 : 0}
+      >
+        Ir a la página principal
+      </Link>
+
       <h3 className="text-center mb-4">Iniciar sesión</h3>
+      <p>Si eres administrador completa los siguientes datos.</p>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="email">Email</label>

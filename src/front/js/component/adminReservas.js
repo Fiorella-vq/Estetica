@@ -33,13 +33,16 @@ export const AdminReservas = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
+  // <-- Estado local para token para poder forzar actualización tras logout
+  const [token, setToken] = useState(localStorage.getItem("token"));
+
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
 
-
+  // <-- Este useEffect escucha cambios en token (local state)
   useEffect(() => {
     if (!token) {
-      navigate("/loginAdmin");
+      // Si no hay token, redirige a login
+      navigate("/loginAdmin", { replace: true });
     }
   }, [token, navigate]);
 
@@ -77,8 +80,10 @@ export const AdminReservas = () => {
   };
 
   useEffect(() => {
-    fetchData(selectedDate);
-  }, [selectedDate]);
+    if (token) {
+      fetchData(selectedDate);
+    }
+  }, [selectedDate, token]); // <-- Añadí token para recargar si cambia
 
   const handleBloquearHorario = async (hora) => {
     const { value: formValues } = await Swal.fire({
@@ -188,8 +193,9 @@ export const AdminReservas = () => {
     }).then((result) => {
       if (result.isConfirmed) {
         localStorage.removeItem("token");
-        localStorage.removeItem("role"); 
-        navigate("/loginAdmin");
+        localStorage.removeItem("role");
+        setToken(null); // <-- Actualizo estado local para que useEffect reaccione
+        navigate("/loginAdmin", { replace: true }); // <-- Navega y reemplaza para evitar back
       }
     });
   };

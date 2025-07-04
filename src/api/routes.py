@@ -440,29 +440,41 @@ def crear_pago():
 
 
 ## --- RUTAS DE TESTIMONIOS ---
+from flask import abort
+
 @api.route('/testimonios', methods=['GET'])
 def obtener_testimonios():
     testimonios = Testimonio.query.order_by(Testimonio.fecha.desc()).all()
-    lista = []
-    for t in testimonios:
-        lista.append({
-            "id": t.id,
-            "nombre": t.nombre,
-            "comentario": t.comentario,
-            "estrellas": t.estrellas,
-            "fecha": t.fecha.strftime("%Y-%m-%d"),
-        })
-    return jsonify(lista)
+    lista = [{
+        "id": t.id,
+        "nombre": t.nombre,
+        "comentario": t.comentario,
+        "estrellas": t.estrellas,
+        "fecha": t.fecha.strftime("%Y-%m-%d"),
+    } for t in testimonios]
+    return jsonify(lista), 200
 
 @api.route('/testimonios', methods=['POST'])
 def crear_testimonio():
-    data = request.get_json()
+    data = request.get_json(force=True)  # Forzar parseo JSON
+    if not data:
+        return jsonify({'error': 'Datos JSON inválidos o faltantes'}), 400
+
     nombre = data.get('nombre')
     comentario = data.get('comentario')
     estrellas = data.get('estrellas', 5)
 
+    # Validaciones básicas
     if not nombre or not comentario:
         return jsonify({'error': 'Nombre y comentario son obligatorios'}), 400
+
+    try:
+        estrellas = int(estrellas)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Estrellas debe ser un número entre 1 y 5'}), 400
+
+    if estrellas < 1 or estrellas > 5:
+        return jsonify({'error': 'Estrellas debe estar entre 1 y 5'}), 400
 
     nuevo_testimonio = Testimonio(
         nombre=nombre,

@@ -10,9 +10,15 @@ export const Testimonios = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  const role = localStorage.getItem("role");
-  const token = localStorage.getItem("token");
-  const isAdmin = role === "admin";
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [token, setToken] = useState(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    const tokenStored = localStorage.getItem("token");
+    setToken(tokenStored);
+    setIsAdmin(tokenStored && role === "admin");
+  }, []);
 
   const cargarTestimonios = async () => {
     setLoading(true);
@@ -33,10 +39,10 @@ export const Testimonios = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: name === "estrellas" ? parseInt(value) : value,
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -92,7 +98,7 @@ export const Testimonios = () => {
 
   return (
     <div className="container py-5">
-      <h2 className="text-center mb-4">Testimonios</h2>
+      <h2 className="text-center mb-4">Nuestros clientes</h2>
 
       <div className="row justify-content-center">
         <div className="col-md-8">
@@ -103,7 +109,7 @@ export const Testimonios = () => {
               id="testimonialCarousel"
               className="carousel slide"
               data-bs-ride="carousel"
-              data-bs-interval="3000" 
+              data-bs-interval="3000"
             >
               <div className="carousel-inner">
                 {testimonios.map((t, index) => (
