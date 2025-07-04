@@ -32,16 +32,11 @@ export const AdminReservas = () => {
   const [bloqueos, setBloqueos] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
-
-  // <-- Estado local para token para poder forzar actualización tras logout
   const [token, setToken] = useState(localStorage.getItem("token"));
-
   const navigate = useNavigate();
 
-  // <-- Este useEffect escucha cambios en token (local state)
   useEffect(() => {
     if (!token) {
-      // Si no hay token, redirige a login
       navigate("/loginAdmin", { replace: true });
     }
   }, [token, navigate]);
@@ -74,6 +69,8 @@ export const AdminReservas = () => {
       setBloqueos(bloqueosFiltrados);
     } catch (error) {
       Swal.fire("Error", "No se pudieron cargar los datos", "error");
+      setReservas([]);
+      setBloqueos([]);
     } finally {
       setLoading(false);
     }
@@ -83,7 +80,7 @@ export const AdminReservas = () => {
     if (token) {
       fetchData(selectedDate);
     }
-  }, [selectedDate, token]); // <-- Añadí token para recargar si cambia
+  }, [selectedDate, token]);
 
   const handleBloquearHorario = async (hora) => {
     const { value: formValues } = await Swal.fire({
@@ -183,6 +180,35 @@ export const AdminReservas = () => {
   const estaReservado = (hora) => reservas.some((r) => formatHora(r.hora) === hora);
   const estaBloqueado = (hora) => bloqueos.some((b) => formatHora(b.hora) === hora);
 
+  const handleEliminarReserva = async (reservaData) => {
+    const confirm = await Swal.fire({
+      title: "¿Eliminar reserva?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+    if (confirm.isConfirmed) {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/admin/reservas/${reservaData.id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Error al eliminar reserva");
+        }
+        Swal.fire("Reserva eliminada", "", "success");
+        fetchData(selectedDate);
+      } catch (error) {
+        Swal.fire("Error", error.message, "error");
+      }
+    }
+  };
+
   const handleLogout = () => {
     Swal.fire({
       title: "¿Cerrar sesión?",
@@ -194,8 +220,8 @@ export const AdminReservas = () => {
       if (result.isConfirmed) {
         localStorage.removeItem("token");
         localStorage.removeItem("role");
-        setToken(null); // <-- Actualizo estado local para que useEffect reaccione
-        navigate("/loginAdmin", { replace: true }); // <-- Navega y reemplaza para evitar back
+        setToken(null);
+        navigate("/loginAdmin", { replace: true });
       }
     });
   };
@@ -249,6 +275,19 @@ export const AdminReservas = () => {
               const reservado = estaReservado(hora);
               const bloqueado = estaBloqueado(hora);
               const bloqueoData = bloqueos.find((b) => formatHora(b.hora) === hora);
+              const reservaData = reservas.find((r) => formatHora(r.hora) === hora);
+
+              const ahora = new Date();
+              const esHoy =
+                selectedDate.getFullYear() === ahora.getFullYear() &&
+                selectedDate.getMonth() === ahora.getMonth() &&
+                selectedDate.getDate() === ahora.getDate();
+
+              const [h, m] = hora.split(":").map(Number);
+              const horaHorario = new Date(selectedDate);
+              horaHorario.setHours(h, m, 0, 0);
+
+              const esHoraPasada = esHoy && horaHorario <= ahora;
 
               return (
                 <li
@@ -262,37 +301,94 @@ export const AdminReservas = () => {
                   }`}
                 >
                   <span>{hora}</span>
-                  <div>
-                    {reservado && <span className="fw-bold text-white">Reservado</span>}
+                  <div style={{ minWidth: "200px" }}>
+                    {esHoraPasada ? (
+                      <>
+                        {reservado && reservaData && (
+                          <div style={{ color: "gray" }}>
+                            <span className="fw-bold">Reservado</span>
+                            <div>
+                              <small>
+                                <strong>Cliente:</strong> {reservaData.nombre || "-"}
+                              </small>
+                              <br />
+                              <small>
+                                <strong>Servicio:</strong> {reservaData.servicio || "-"}
+                              </small>
+                            </div>
+                          </div>
+                        )}
+                        {!reservado && bloqueado && bloqueoData && (
+                          <div style={{ color: "gray" }}>
+                            <span className="fw-semibold">Bloqueado</span>
+                            <div>
+                              <small>
+                                <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                              </small>
+                              <br />
+                              <small>
+                                <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
+                              </small>
+                            </div>
+                          </div>
+                        )}
+                        {!reservado && !bloqueado && (
+                          <div style={{ color: "gray" }}>Horario pasado</div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {reservado && reservaData && (
+                          <div>
+                            <span className="fw-bold text-white">Reservado</span>
+                            <div>
+                              <small>
+                                <strong>Cliente:</strong> {reservaData.nombre || "-"}
+                              </small>
+                              <br />
+                              <small>
+                                <strong>Servicio:</strong> {reservaData.servicio || "-"}
+                              </small>
+                            </div>
+                            <button
+                              className="btn btn-sm btn-outline-danger mt-1"
+                              onClick={() => handleEliminarReserva(reservaData)}
+                            >
+                              Eliminar reserva
+                            </button>
+                          </div>
+                        )}
 
-                    {!reservado && bloqueado && bloqueoData && (
-                      <div>
-                        <span className="fw-semibold">Bloqueado</span>
-                        <div>
-                          <small>
-                            <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
-                          </small>
-                          <br />
-                          <small>
-                            <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
-                          </small>
-                        </div>
-                        <button
-                          className="btn btn-sm btn-outline-success mt-1"
-                          onClick={() => handleQuitarBloqueo(bloqueoData)}
-                        >
-                          Desbloquear
-                        </button>
-                      </div>
-                    )}
+                        {!reservado && bloqueado && bloqueoData && (
+                          <div>
+                            <span className="fw-semibold">Bloqueado</span>
+                            <div>
+                              <small>
+                                <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                              </small>
+                              <br />
+                              <small>
+                                <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
+                              </small>
+                            </div>
+                            <button
+                              className="btn btn-sm btn-outline-success mt-1"
+                              onClick={() => handleQuitarBloqueo(bloqueoData)}
+                            >
+                              Desbloquear
+                            </button>
+                          </div>
+                        )}
 
-                    {!reservado && !bloqueado && (
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => handleBloquearHorario(hora)}
-                      >
-                        Bloquear
-                      </button>
+                        {!reservado && !bloqueado && (
+                          <button
+                            className="btn btn-sm btn-outline-primary"
+                            onClick={() => handleBloquearHorario(hora)}
+                          >
+                            Bloquear
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </li>
