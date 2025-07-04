@@ -40,14 +40,15 @@ export const Navbar = () => {
           aria-expanded="false"
           aria-label="Toggle navigation"
         >
-          <span className="navbar-toggler-icon"></span>
+          <i className="fas fa-bars"></i>
         </button>
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             <li className="nav-item">
-              <Link to="/sobreMi" className="nav-link">Sobre mí</Link>
-
+              <Link to="/sobreMi" className="nav-link">
+                Sobre mí
+              </Link>
             </li>
             {/* <li className="nav-item">
               <Link to="/informacion-adicional" className="nav-link">
