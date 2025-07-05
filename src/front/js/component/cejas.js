@@ -10,7 +10,7 @@ export const PerfiladoCejas = () => {
   navigate("/calendario", {
     state: {
       from: "Perfilado de Cejas",
-      precio: 500,  
+      precio: 50,  
     },
   });
 };
