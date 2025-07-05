@@ -144,7 +144,10 @@ export const Calendario = () => {
           throw new Error(errorData.error || "No se pudo crear la reserva");
         }
 
-        await crearResponse.json();
+        const reservaCreada = await crearResponse.json();
+
+        // Guardar el id de la reserva en localStorage para que el componente Pagos pueda usarlo
+        localStorage.setItem("reservaId", reservaCreada.id);
 
         Swal.fire(
           "¡Turno confirmado!",
@@ -152,8 +155,9 @@ export const Calendario = () => {
           "success"
         );
 
-        // Guardar datos en variables antes de limpiar para enviar a la siguiente pantalla
+        // Pasar la info completa al componente Pagos via location.state
         const reservaParaPago = {
+          id: reservaCreada.id,
           nombre,
           email: emailCliente,
           telefono,

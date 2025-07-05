@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 
 export const Pagos = () => {
   const location = useLocation();
-
   const reservaInicial = location.state || null;
 
   const [reserva, setReserva] = useState(reservaInicial);
@@ -19,32 +18,34 @@ export const Pagos = () => {
     process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/api";
 
   useEffect(() => {
-    if (!reserva) {
-      const fetchReserva = async () => {
-        try {
-          const response = await axios.get(`${BACKEND_URL}/reserva/ultima`);
-          const reservaData = response.data;
-
-          setReserva(reservaData);
-          if (reservaData.email) setEmail(reservaData.email);
-
-          if (reservaData.precio) {
-            const seniaCalculada = Number(
-              (reservaData.precio * 0.4).toFixed(2)
-            );
-            setSenia(seniaCalculada);
-          }
-        } catch (error) {
-          setErrorReserva("Error al obtener la reserva.");
+    const fetchReserva = async () => {
+      try {
+        const reservaId = localStorage.getItem("reservaId");
+        if (!reservaId) {
+          setErrorReserva("No se encontró información de la reserva.");
+          return;
         }
-      };
 
-      fetchReserva();
-    } else {
-      if (reserva.precio) {
-        const seniaCalculada = Number((reserva.precio * 0.4).toFixed(2));
-        setSenia(seniaCalculada);
+        const response = await axios.get(`${BACKEND_URL}/reserva/${reservaId}`);
+        const reservaData = response.data;
+
+        setReserva(reservaData);
+        if (reservaData.email) setEmail(reservaData.email);
+
+        if (reservaData.precio) {
+          const seniaCalculada = Number((reservaData.precio * 0.4).toFixed(2));
+          setSenia(seniaCalculada);
+        }
+      } catch (error) {
+        setErrorReserva("Error al obtener la reserva.");
       }
+    };
+
+    if (!reserva) {
+      fetchReserva();
+    } else if (reserva.precio) {
+      const seniaCalculada = Number((reserva.precio * 0.4).toFixed(2));
+      setSenia(seniaCalculada);
     }
   }, [reserva, BACKEND_URL]);
 
@@ -86,6 +87,56 @@ export const Pagos = () => {
       );
     } finally {
       setLoadingPago(false);
+    }
+  };
+
+  const handleCancelarReserva = async () => {
+    if (!reserva || !reserva.id) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se encontró la reserva para cancelar.",
+      });
+      return;
+    }
+
+    const confirmacion = await Swal.fire({
+      title: "¿Cancelar reserva?",
+      text: "Si volvés al inicio se cancelará tu reserva y el horario quedará disponible.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, cancelar",
+      cancelButtonText: "No, volver",
+    });
+
+    if (confirmacion.isConfirmed) {
+      try {
+        // Aquí importante usar PUT con reserva.id, no con token
+        await axios.put(`${BACKEND_URL}/reserva/${reserva.id}`);
+
+        localStorage.removeItem("reservaId");
+        setReserva(null);
+
+        await Swal.fire({
+          icon: "success",
+          title: "Reserva cancelada",
+          text: "Tu reserva fue cancelada correctamente.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        window.location.href = "/";
+      } catch (error) {
+        console.error(
+          "Error al cancelar la reserva:",
+          error.response?.data || error.message
+        );
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudo cancelar la reserva. Intentá nuevamente.",
+        });
+      }
     }
   };
 
@@ -157,54 +208,11 @@ export const Pagos = () => {
         <div className="col-12 col-md-8 text-center mt-5">
           <h2 className="text-primary mb-4">¿Qué deseas hacer ahora?</h2>
           <button
-  className="btn btn-outline-secondary"
-  onClick={async () => {
-    if (!reserva || !reserva.id) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se encontró la reserva para cancelar.",
-      });
-      return;
-    }
-
-    const confirmacion = await Swal.fire({
-      title: "¿Cancelar reserva?",
-      text: "Si volvés al inicio se cancelará tu reserva y el horario quedará disponible.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, cancelar",
-      cancelButtonText: "No, volver",
-    });
-
-    if (confirmacion.isConfirmed) {
-      try {
-        // Llamada PUT para cancelar la reserva
-        await axios.put(`${BACKEND_URL}/reserva/${reserva.id}`);
-
-        await Swal.fire({
-          icon: "success",
-          title: "Reserva cancelada",
-          text: "Tu reserva fue cancelada correctamente.",
-          timer: 2000,
-          showConfirmButton: false,
-        });
-
-        // Redirigir a inicio
-        window.location.href = "/";
-      } catch (error) {
-        console.error("Error al cancelar la reserva:", error.response?.data || error.message);
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "No se pudo cancelar la reserva. Intentá nuevamente.",
-        });
-      }
-    }
-  }}
->
-  Volver al Inicio
-</button>
+            className="btn btn-outline-secondary"
+            onClick={handleCancelarReserva}
+          >
+            Volver al Inicio
+          </button>
         </div>
       </div>
     </div>

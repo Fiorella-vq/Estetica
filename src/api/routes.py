@@ -183,6 +183,24 @@ def obtener_reserva_por_token(token):
             'email': reserva.email
         }
     }), 200
+    
+@api.route('/reserva/<int:reserva_id>', methods=['GET'])
+def obtener_reserva_por_id(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+
+    return jsonify({
+        "id": reserva.id,
+        "nombre": reserva.nombre,
+        "email": reserva.email,
+        "fecha": reserva.fecha.isoformat() if hasattr(reserva.fecha, 'isoformat') else str(reserva.fecha),
+        "hora": reserva.hora.strftime('%H:%M'),
+        "servicio": reserva.servicio,
+        "precio": reserva.precio,
+        "cancelada": reserva.cancelada
+    }), 200
+
 
 @api.route('/cancelar/<string:token>', methods=['PUT'])
 def cancelar_reserva_por_token(token):
@@ -225,9 +243,16 @@ def obtener_reservas():
         query = query.filter_by(email=email)
 
     reservas = query.all()
-    resultado = [r.serialize() for r in reservas]
+
+    resultado = []
+    for r in reservas:
+        try:
+            resultado.append(r.serialize())
+        except Exception as e:
+            current_app.logger.error(f"Error serializando reserva {r.id}: {e}")
 
     return jsonify({'reservas': resultado}), 200
+
 
 @api.route('/reservas', methods=['DELETE'])
 def eliminar_reserva_publico():
