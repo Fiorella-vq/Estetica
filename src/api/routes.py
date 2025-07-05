@@ -376,9 +376,18 @@ def login_admin():
 @api.route('/admin/reservas', methods=['GET'])
 @admin_required
 def admin_obtener_reservas():
-    reservas = Reserva.query.filter_by(cancelada=False).all()
+    fecha_str = request.args.get('fecha')
+    if not fecha_str:
+        return jsonify({'error': 'Debe proporcionar una fecha en formato YYYY-MM-DD'}), 400
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+
+    reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
     resultado = [r.serialize() for r in reservas]
     return jsonify({'reservas': resultado}), 200
+
 
 @api.route('/admin/reservas/<int:reserva_id>', methods=['DELETE'])
 @admin_required

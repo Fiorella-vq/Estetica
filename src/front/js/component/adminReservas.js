@@ -35,14 +35,14 @@ export const AdminReservas = () => {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const navigate = useNavigate();
 
-  // Si no hay token, redirige a login admin
+  // Redirigir si no hay token
   useEffect(() => {
     if (!token) {
       navigate("/loginAdmin", { replace: true });
     }
   }, [token, navigate]);
 
-  // Fetch reservas y bloqueos para la fecha seleccionada
+  // Traer reservas y bloqueos filtrados por fecha
   const fetchData = async (date) => {
     setLoading(true);
     const formattedDate = formatFecha(date);
@@ -63,12 +63,17 @@ export const AdminReservas = () => {
       const reservasData = await reservaRes.json();
       const bloqueosData = await bloqueoRes.json();
 
-      // Filtramos bloqueos para la fecha actual (por si acaso)
+      // Filtro bloqueos por fecha (por si acaso)
       const bloqueosFiltrados = (bloqueosData.bloqueos || []).filter(
         (b) => b.fecha === formattedDate
       );
 
-      setReservas(reservasData.reservas || []);
+      // Filtro reservas por fecha (muy importante para no mostrar reservas de otros días)
+      const reservasFiltradas = (reservasData.reservas || []).filter(
+        (r) => r.fecha === formattedDate
+      );
+
+      setReservas(reservasFiltradas);
       setBloqueos(bloqueosFiltrados);
     } catch (error) {
       Swal.fire("Error", "No se pudieron cargar los datos", "error");
@@ -87,7 +92,7 @@ export const AdminReservas = () => {
 
   const totalGanado = reservas.reduce((acc, r) => acc + (Number(r.precio) || 0), 0);
 
-  // Funciones para bloquear, desbloquear y eliminar reservas (tu lógica)
+  // Bloquear horario
   const handleBloquearHorario = async (hora) => {
     const { value: formValues } = await Swal.fire({
       title: `Bloquear horario ${hora}`,
@@ -146,6 +151,7 @@ export const AdminReservas = () => {
     }
   };
 
+  // Quitar bloqueo
   const handleQuitarBloqueo = async (bloqueo) => {
     if (!bloqueo) {
       Swal.fire("Error", "Bloqueo inválido", "error");
@@ -189,6 +195,7 @@ export const AdminReservas = () => {
   const estaBloqueado = (hora) =>
     bloqueos.some((b) => normalizeHora(b.hora) === hora);
 
+  // Eliminar reserva
   const handleEliminarReserva = async (reservaData) => {
     const confirm = await Swal.fire({
       title: "¿Eliminar reserva?",
@@ -218,6 +225,7 @@ export const AdminReservas = () => {
     }
   };
 
+  // Logout admin
   const handleLogout = () => {
     Swal.fire({
       title: "¿Cerrar sesión?",
