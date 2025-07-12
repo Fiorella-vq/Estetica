@@ -9,14 +9,7 @@ export const Navbar = () => {
       <div className="container-fluid d-flex justify-content-between align-items-center">
         
         <div className="d-flex align-items-center">
-          <Link
-            to="/loginAdmin"
-            title="Área de administración"
-            className="admin-icon"
-          >
-            ⚙️
-          </Link>
-          <Link to="/">
+          <Link to="/loginAdmin">
             <img
               src={Loto}
               alt="Logo Flor Estética Integral"
@@ -40,6 +33,11 @@ export const Navbar = () => {
 
         <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
           <ul className="navbar-nav">
+            <li className="nav-item">
+              <Link to="/" className="nav-link">
+                Inicio
+              </Link>
+            </li>
             <li className="nav-item">
               <Link to="/sobreMi" className="nav-link">
                 Sobre mí

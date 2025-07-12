@@ -17,24 +17,30 @@ export const Calendario = () => {
   const [telefono, setTelefono] = useState("");
   const [emailCliente, setEmailCliente] = useState("");
 
-  // Precio inicial desde location.state o 0
-  const [precioServicio, setPrecioServicio] = useState(() => location.state?.precio || 0);
+  const [precioServicio, setPrecioServicio] = useState(
+    () => location.state?.precio || 0
+  );
 
-  // Función para formatear moneda local (ARS)
   const formatoMoneda = (valor) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(valor);
+    new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+    }).format(valor);
 
   const cargarHorasDisponibles = async (nuevaFecha) => {
     try {
       const fechaISO = nuevaFecha.toISOString().slice(0, 10);
 
-      const response = await fetch(`http://localhost:3001/api/horarios-disponibles?fecha=${fechaISO}`);
-      if (!response.ok) throw new Error("Error al obtener horarios disponibles");
+      const response = await fetch(
+        `http://localhost:3001/api/horarios-disponibles?fecha=${fechaISO}`
+      );
+      if (!response.ok)
+        throw new Error("Error al obtener horarios disponibles");
 
       const data = await response.json();
       let libres = data.horarios_disponibles || [];
 
-      // Filtrar las horas pasadas si la fecha es hoy
+    
       const hoy = new Date();
       const esHoy =
         nuevaFecha.getFullYear() === hoy.getFullYear() &&
@@ -57,7 +63,11 @@ export const Calendario = () => {
       }
     } catch (error) {
       console.error("Error al cargar horarios disponibles:", error);
-      Swal.fire("Error", "No se pudieron cargar las horas disponibles.", "error");
+      Swal.fire(
+        "Error",
+        "No se pudieron cargar las horas disponibles.",
+        "error"
+      );
       setHorasDisponibles([]);
       setHoraSeleccionada(null);
     }
@@ -80,13 +90,26 @@ export const Calendario = () => {
   };
 
   const confirmarReserva = async () => {
-    if (!nombre.trim() || !telefono.trim() || !emailCliente.trim() || !horaSeleccionada) {
-      Swal.fire("Atención", "Por favor completá todos los campos y seleccioná una hora.", "warning");
+    if (
+      !nombre.trim() ||
+      !telefono.trim() ||
+      !emailCliente.trim() ||
+      !horaSeleccionada
+    ) {
+      Swal.fire(
+        "Atención",
+        "Por favor completá todos los campos y seleccioná una hora.",
+        "warning"
+      );
       return;
     }
 
     if (!/\S+@\S+\.\S+/.test(emailCliente)) {
-      Swal.fire("Atención", "Por favor ingresá un correo electrónico válido.", "warning");
+      Swal.fire(
+        "Atención",
+        "Por favor ingresá un correo electrónico válido.",
+        "warning"
+      );
       return;
     }
 
@@ -104,19 +127,22 @@ export const Calendario = () => {
       try {
         const fechaISO = fecha.toISOString().slice(0, 10);
 
-        const crearResponse = await fetch("http://localhost:3001/api/reservas", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fecha: fechaISO,
-            hora: horaSeleccionada,
-            nombre,
-            telefono,
-            email: emailCliente,
-            servicio,
-            precio: precioServicio,
-          }),
-        });
+        const crearResponse = await fetch(
+          "http://localhost:3001/api/reservas",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fecha: fechaISO,
+              hora: horaSeleccionada,
+              nombre,
+              telefono,
+              email: emailCliente,
+              servicio,
+              precio: precioServicio,
+            }),
+          }
+        );
 
         if (!crearResponse.ok) {
           const errorData = await crearResponse.json();
@@ -253,7 +279,11 @@ export const Calendario = () => {
               {hora}
             </label>
           ))}
-          <button className="btn" onClick={confirmarReserva} disabled={!horaSeleccionada}>
+          <button
+            className="btn"
+            onClick={confirmarReserva}
+            disabled={!horaSeleccionada}
+          >
             Confirmar turno
           </button>
         </>

@@ -1,19 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/services.css";
 import ReductoresImage from "../../img/reductores.jpg";
 
 export const Reductores = () => {
   const navigate = useNavigate();
-  
-    const handleButtonClick = () => {
-  navigate("/calendario", {
-    state: {
-      from: "Tratamiento Reductor",
-      precio: 850,  
-    },
-  });
-};
+
+  const [lugar, setLugar] = useState("local");
+
+  const precios = {
+    local: 850,
+    casa: 1100, // ajustá el valor si querés otro
+  };
+
+  const handleButtonClick = () => {
+    navigate("/calendario", {
+      state: {
+        from: "Tratamiento Reductor",
+        precio: precios[lugar],
+        lugar,
+      },
+    });
+  };
 
   return (
     <div className="card2">
@@ -25,7 +33,7 @@ export const Reductores = () => {
           <u>Tratamiento Reductor</u>
         </h5>
         <p>
-          <strong>Descripción:</strong>Tratamientos para modelar el cuerpo,
+          <strong>Descripción:</strong> Tratamientos para modelar el cuerpo,
           reducir medidas y mejorar la textura de la piel. Disponibles con
           aparatología (ultrasonido, ondas rusas, radiofrecuencia) o de forma
           manual.
@@ -38,7 +46,7 @@ export const Reductores = () => {
           por semana, según las necesidades y el área a tratar.
         </p>
         <p>
-          <strong>Precio:</strong> $850 por sesión.
+          <strong>Precio:</strong> ${precios[lugar]} por sesión.
         </p>
         <p>
           <strong>Recomendaciones:</strong> Mantener una dieta equilibrada y
@@ -53,6 +61,30 @@ export const Reductores = () => {
           <strong>Resultados esperados:</strong> Reducción de grasa localizada,
           contorno corporal más definido y piel más firme.
         </p>
+
+        <div className="radio-group" style={{ marginTop: "1rem" }}>
+          <p><strong>¿Dónde querés hacerte el servicio?</strong></p>
+          <label>
+            <input
+              type="radio"
+              name="lugar"
+              value="local"
+              checked={lugar === "local"}
+              onChange={() => setLugar("local")}
+            />
+            En local (${precios.local})
+          </label>
+          <label style={{ marginLeft: "1rem" }}>
+            <input
+              type="radio"
+              name="lugar"
+              value="casa"
+              checked={lugar === "casa"}
+              onChange={() => setLugar("casa")}
+            />
+            En casa (${precios.casa})
+          </label>
+        </div>
       </div>
       <div className="btn-container">
         <button className="btn" onClick={handleButtonClick}>

@@ -1,16 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/services.css";
 import CejasImage from "../../img/cejas.jpg";
 
 export const PerfiladoCejas = () => {
   const navigate = useNavigate();
+  const [lugar, setLugar] = useState("local");
+
+  const precios = {
+    local: 500,
+    casa: 800,
+  };
 
   const handleButtonClick = () => {
     navigate("/calendario", {
       state: {
         from: "Perfilado de Cejas",
-        precio: 50,
+        precio: precios[lugar],
+        lugar,
       },
     });
   };
@@ -24,6 +31,7 @@ export const PerfiladoCejas = () => {
         <h5 className="card-title2">
           <u>Perfilado de Cejas</u>
         </h5>
+
         <p>
           <strong>Descripción:</strong> Perfilado y diseño de cejas para
           resaltar tu expresión natural. Incluye depilación y armonización según
@@ -31,9 +39,6 @@ export const PerfiladoCejas = () => {
         </p>
         <p>
           <strong>Duración por sesión:</strong> Aproximadamente 30 a 45 minutos.
-        </p>
-        <p>
-          <strong>Precio:</strong> $500.
         </p>
         <p>
           <strong>Recomendaciones:</strong> Evitar mojar o maquillar las cejas
@@ -50,8 +55,36 @@ export const PerfiladoCejas = () => {
         <p>
           <strong>Promoción:</strong> No.
         </p>
+
+        <div style={{ marginTop: "1.5rem" }}>
+          <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>Precio:</p>
+          <div className="radio-group">
+            <p><strong>¿Dónde querés hacerte el servicio?</strong></p>
+            <label>
+              <input
+                type="radio"
+                name="lugar"
+                value="local"
+                checked={lugar === "local"}
+                onChange={() => setLugar("local")}
+              />
+              En local ($ {precios.local})
+            </label>
+            <label style={{ marginLeft: "1rem" }}>
+              <input
+                type="radio"
+                name="lugar"
+                value="casa"
+                checked={lugar === "casa"}
+                onChange={() => setLugar("casa")}
+              />
+              En domicilio ($ {precios.casa})
+            </label>
+          </div>
+        </div>
       </div>
-      <div className="btn-container">
+
+      <div className="btn-container" style={{ marginTop: "1.5rem" }}>
         <button className="btn" onClick={handleButtonClick}>
           Agendá tu cita
         </button>

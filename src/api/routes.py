@@ -128,15 +128,14 @@ def crear_reserva():
     if fecha < datetime.utcnow().date():
         return jsonify({'error': 'No se pueden hacer reservas en el pasado'}), 400
 
-    reserva_existente = Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first()
-    if reserva_existente:
+    if Reserva.query.filter_by(fecha=fecha, hora=hora, cancelada=False).first():
         return jsonify({'error': 'Ya existe una reserva en esa fecha y hora'}), 409
 
-    bloqueo_existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora, bloqueado=True).first()
-    if bloqueo_existente:
+    if Bloqueo.query.filter_by(fecha=fecha, hora=hora, bloqueado=True).first():
         return jsonify({'error': 'El horario está bloqueado y no se puede reservar'}), 409
 
     token = generate_token()
+
     reserva = Reserva(
         nombre=data['nombre'],
         email=data['email'],
@@ -146,7 +145,9 @@ def crear_reserva():
         servicio=data['servicio'],
         precio=precio,
         token=token,
-        cancelada=False
+        cancelada=False,
+        direccion=data.get('direccion'),
+        variante_precio=data.get('variante_precio')
     )
 
     try:
@@ -157,6 +158,8 @@ def crear_reserva():
         mensaje = (
             f"Hola {reserva.nombre},\n\n"
             f"Tu reserva para el servicio '{reserva.servicio}' fue confirmada para el {reserva.fecha.strftime('%d/%m/%Y')} a las {reserva.hora.strftime('%H:%M')}.\n"
+            f"Dirección: {reserva.direccion or 'No especificada'}\n"
+            f"Variante: {reserva.variante_precio or 'No especificada'}\n"
             f"Si necesitás cancelar tu turno, podés hacerlo en este enlace:\n{cancel_url}\n\n"
             "¡Gracias por tu reserva!"
         )
@@ -168,22 +171,7 @@ def crear_reserva():
         current_app.logger.error(f"Error guardando reserva: {e}", exc_info=True)
         return jsonify({'error': 'Error al guardar la reserva', 'detail': str(e)}), 500
 
-@api.route('/reserva-por-token/<string:token>', methods=['GET'])
-def obtener_reserva_por_token(token):
-    reserva = Reserva.query.filter_by(token=token, cancelada=False).first()
-    if not reserva:
-        return jsonify({'error': 'Token inválido o reserva no encontrada o cancelada'}), 404
 
-    return jsonify({
-        'reserva': {
-            'nombre': reserva.nombre,
-            'fecha': reserva.fecha.isoformat(),
-            'hora': reserva.hora.strftime('%H:%M'),
-            'servicio': reserva.servicio,
-            'email': reserva.email
-        }
-    }), 200
-    
 @api.route('/reserva/<int:reserva_id>', methods=['GET'])
 def obtener_reserva_por_id(reserva_id):
     reserva = Reserva.query.get(reserva_id)
@@ -194,12 +182,77 @@ def obtener_reserva_por_id(reserva_id):
         "id": reserva.id,
         "nombre": reserva.nombre,
         "email": reserva.email,
+        "telefono": reserva.telefono,
         "fecha": reserva.fecha.isoformat() if hasattr(reserva.fecha, 'isoformat') else str(reserva.fecha),
         "hora": reserva.hora.strftime('%H:%M'),
         "servicio": reserva.servicio,
         "precio": reserva.precio,
-        "cancelada": reserva.cancelada
+        "cancelada": reserva.cancelada,
+        "direccion": reserva.direccion,
+        "variante_precio": reserva.variante_precio,
     }), 200
+
+
+@api.route('/reserva-por-token/<string:token>', methods=['GET'])
+def obtener_reserva_por_token(token):
+    reserva = Reserva.query.filter_by(token=token, cancelada=False).first()
+    if not reserva:
+        return jsonify({'error': 'Token inválido o reserva no encontrada o cancelada'}), 404
+
+    return jsonify({
+        'reserva': {
+            'nombre': reserva.nombre,
+            'telefono': reserva.telefono,
+            'fecha': reserva.fecha.isoformat(),
+            'hora': reserva.hora.strftime('%H:%M'),
+            'servicio': reserva.servicio,
+            'email': reserva.email,
+            'direccion': reserva.direccion,
+            'variante_precio': reserva.variante_precio,
+            'precio': reserva.precio
+        }
+    }), 200
+
+
+@api.route('/reservas', methods=['GET'])
+def obtener_reservas():
+    fecha_str = request.args.get('fecha')
+    email = request.args.get('email')
+
+    if not fecha_str:
+        return jsonify({'error': 'Debe proporcionar una fecha'}), 400
+
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+
+    query = Reserva.query.filter_by(fecha=fecha, cancelada=False)
+    if email:
+        query = query.filter_by(email=email)
+
+    reservas = query.all()
+
+    resultado = []
+    for r in reservas:
+        try:
+            resultado.append({
+                "id": r.id,
+                "nombre": r.nombre,
+                "email": r.email,
+                "telefono": r.telefono,
+                "fecha": r.fecha.isoformat(),
+                "hora": r.hora.strftime("%H:%M"),
+                "servicio": r.servicio,
+                "precio": r.precio,
+                "cancelada": r.cancelada,
+                "direccion": r.direccion,
+                "variante_precio": r.variante_precio,
+            })
+        except Exception as e:
+            current_app.logger.error(f"Error serializando reserva {r.id}: {e}")
+
+    return jsonify({'reservas': resultado}), 200
 
 
 @api.route('/cancelar/<string:token>', methods=['PUT'])
@@ -225,70 +278,7 @@ def cancelar_reserva_por_token(token):
         current_app.logger.error(f"Error cancelando reserva: {e}", exc_info=True)
         return jsonify({'error': 'Error al cancelar la reserva', 'detail': str(e)}), 500
 
-@api.route('/reservas', methods=['GET'])
-def obtener_reservas():
-    fecha_str = request.args.get('fecha')
-    email = request.args.get('email')
 
-    if not fecha_str:
-        return jsonify({'error': 'Debe proporcionar una fecha'}), 400
-
-    try:
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
-
-    query = Reserva.query.filter_by(fecha=fecha, cancelada=False)
-    if email:
-        query = query.filter_by(email=email)
-
-    reservas = query.all()
-
-    resultado = []
-    for r in reservas:
-        try:
-            resultado.append(r.serialize())
-        except Exception as e:
-            current_app.logger.error(f"Error serializando reserva {r.id}: {e}")
-
-    return jsonify({'reservas': resultado}), 200
-
-
-@api.route('/reservas', methods=['DELETE'])
-def eliminar_reserva_publico():
-    return jsonify({'error': 'Acceso no autorizado. Usar /admin/reservas para eliminar.'}), 403
-
-@api.route('/enviar-email', methods=['POST'])
-def enviar_email():
-    data = request.get_json()
-    email_destino = data.get('email')
-    asunto = data.get('asunto')
-    mensaje = data.get('mensaje')
-
-    if not email_destino or not asunto or not mensaje:
-        return jsonify({'error': 'Faltan campos obligatorios'}), 400
-
-    success, info = enviar_email_smtp(email_destino, asunto, mensaje)
-    if success:
-        return jsonify({'message': 'Correo enviado exitosamente'}), 200
-    else:
-        return jsonify({'error': f'Error enviando correo: {info}'}), 500
-
-@api.route("/api/reserva/ultima", methods=["GET"])
-def obtener_ultima_reserva():
-    reserva = Reserva.query.order_by(Reserva.id.desc()).first()
-    if reserva:
-        return jsonify({
-            "id": reserva.id,
-            "servicio": reserva.servicio,
-            "fecha": reserva.fecha.isoformat() if hasattr(reserva.fecha, 'isoformat') else reserva.fecha,
-            "hora": reserva.hora.strftime('%H:%M'),
-            "email": reserva.email,
-            "precio": reserva.precio,
-        })
-    else:
-        return jsonify({"error": "No hay reservas"}), 404
-    
 @api.route('/reserva/<int:reserva_id>', methods=['PUT'])
 def cancelar_reserva_por_id(reserva_id):
     reserva = Reserva.query.get(reserva_id)
@@ -299,7 +289,6 @@ def cancelar_reserva_por_id(reserva_id):
         reserva.cancelada = True
         db.session.commit()
 
-        # Email al cliente
         mensaje_cliente = (
             f"Hola {reserva.nombre},\n\n"
             f"Tu reserva para el servicio '{reserva.servicio}' programada para el {reserva.fecha.strftime('%d/%m/%Y')} a las {reserva.hora.strftime('%H:%M')} ha sido cancelada correctamente.\n\n"
@@ -307,7 +296,6 @@ def cancelar_reserva_por_id(reserva_id):
         )
         enviar_email_smtp(reserva.email, "Cancelación de reserva", mensaje_cliente)
 
-        # Email a la admin
         admin_email = os.getenv("ADMIN_EMAIL", "admin@tuservicio.com")
         mensaje_admin = (
             f"Reserva cancelada por el cliente:\n\n"
@@ -326,7 +314,77 @@ def cancelar_reserva_por_id(reserva_id):
         return jsonify({'error': 'Error al cancelar la reserva', 'detail': str(e)}), 500
 
 
-# --- NUEVO ENDPOINT PÚBLICO PARA HORARIOS DISPONIBLES ---
+@api.route('/reservas', methods=['DELETE'])
+def eliminar_reserva_publico():
+    return jsonify({'error': 'Acceso no autorizado. Usar /admin/reservas para eliminar.'}), 403
+
+
+# --- RUTAS ADMIN ---
+
+@api.route('/admin/login', methods=['POST'])
+def login_admin():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if email != os.getenv('ADMIN_EMAIL') or password != os.getenv('ADMIN_PASSWORD'):
+        return jsonify({'error': 'Credenciales inválidas'}), 401
+
+    token = generar_jwt({'email': email, 'role': 'admin'}, expiracion_minutos=60*24)
+    return jsonify({'token': token}), 200
+
+
+@api.route('/admin/reservas', methods=['GET'])
+@admin_required
+def admin_obtener_reservas():
+    fecha_str = request.args.get('fecha')
+    if not fecha_str:
+        return jsonify({'error': 'Debe proporcionar una fecha en formato YYYY-MM-DD'}), 400
+    try:
+        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Formato de fecha inválido'}), 400
+
+    reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
+    resultado = []
+    for r in reservas:
+        try:
+            resultado.append({
+                "id": r.id,
+                "nombre": r.nombre,
+                "email": r.email,
+                "telefono": r.telefono,
+                "fecha": r.fecha.isoformat(),
+                "hora": r.hora.strftime("%H:%M"),
+                "servicio": r.servicio,
+                "precio": r.precio,
+                "cancelada": r.cancelada,
+                "direccion": r.direccion,
+                "variante_precio": r.variante_precio,
+            })
+        except Exception as e:
+            current_app.logger.error(f"Error serializando reserva {r.id}: {e}")
+    return jsonify({'reservas': resultado}), 200
+
+
+@api.route('/admin/reservas/<int:reserva_id>', methods=['DELETE'])
+@admin_required
+def admin_eliminar_reserva(reserva_id):
+    reserva = Reserva.query.get(reserva_id)
+    if not reserva:
+        return jsonify({'error': 'Reserva no encontrada'}), 404
+
+    try:
+        db.session.delete(reserva)
+        db.session.commit()
+        return jsonify({'message': 'Reserva eliminada correctamente'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
+
+
+# --- HORARIOS DISPONIBLES PÚBLICO ---
+
 @api.route('/horarios-disponibles', methods=['GET'])
 def horarios_disponibles():
     fecha_str = request.args.get('fecha')
@@ -359,50 +417,8 @@ def horarios_disponibles():
         "horarios_disponibles": horarios_disponibles
     }), 200
 
-# --- RUTAS ADMIN ---
 
-@api.route('/admin/login', methods=['POST'])
-def login_admin():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-
-    if email != os.getenv('ADMIN_EMAIL') or password != os.getenv('ADMIN_PASSWORD'):
-        return jsonify({'error': 'Credenciales inválidas'}), 401
-
-    token = generar_jwt({'email': email, 'role': 'admin'}, expiracion_minutos=60*24)
-    return jsonify({'token': token}), 200
-
-@api.route('/admin/reservas', methods=['GET'])
-@admin_required
-def admin_obtener_reservas():
-    fecha_str = request.args.get('fecha')
-    if not fecha_str:
-        return jsonify({'error': 'Debe proporcionar una fecha en formato YYYY-MM-DD'}), 400
-    try:
-        fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
-
-    reservas = Reserva.query.filter_by(fecha=fecha, cancelada=False).all()
-    resultado = [r.serialize() for r in reservas]
-    return jsonify({'reservas': resultado}), 200
-
-
-@api.route('/admin/reservas/<int:reserva_id>', methods=['DELETE'])
-@admin_required
-def admin_eliminar_reserva(reserva_id):
-    reserva = Reserva.query.get(reserva_id)
-    if not reserva:
-        return jsonify({'error': 'Reserva no encontrada'}), 404
-
-    try:
-        db.session.delete(reserva)
-        db.session.commit()
-        return jsonify({'message': 'Reserva eliminada correctamente'}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'Error eliminando reserva', 'detail': str(e)}), 500
+# --- RUTAS BLOQUEOS ADMIN ---
 
 @api.route("/admin/bloqueos", methods=["GET"])
 @admin_required
@@ -434,8 +450,7 @@ def crear_bloqueo():
         if not nombre or not servicio:
             return jsonify({"error": "Faltan nombre o servicio"}), 400
 
-        existente = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
-        if existente:
+        if Bloqueo.query.filter_by(fecha=fecha, hora=hora).first():
             return jsonify({"error": "Ya existe un bloqueo en ese horario"}), 400
 
         nuevo_bloqueo = Bloqueo(
@@ -447,160 +462,108 @@ def crear_bloqueo():
         )
         db.session.add(nuevo_bloqueo)
         db.session.commit()
-
-        return jsonify({"mensaje": "Bloqueo creado", "bloqueo": nuevo_bloqueo.serialize()}), 201
-
+        return jsonify({"message": "Bloqueo creado correctamente"}), 201
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"Error creando bloqueo: {e}", exc_info=True)
+        return jsonify({"error": "Error creando bloqueo", "detail": str(e)}), 500
 
-@api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
+
+@api.route("/admin/bloqueos/<int:id>", methods=["PUT"])
 @admin_required
-def eliminar_bloqueo_por_id(id):
+def actualizar_bloqueo(id):
     bloqueo = Bloqueo.query.get(id)
     if not bloqueo:
         return jsonify({"error": "Bloqueo no encontrado"}), 404
 
-    db.session.delete(bloqueo)
-    db.session.commit()
-    return jsonify({"mensaje": "Bloqueo eliminado"}), 200
-
-@api.route("/admin/bloqueos", methods=["DELETE"])
-@admin_required
-def eliminar_bloqueo_por_fecha_y_hora():
     data = request.get_json()
     try:
-        fecha = datetime.strptime(data.get("fecha"), "%Y-%m-%d").date()
-        hora = datetime.strptime(data.get("hora"), "%H:%M").time()
+        if "bloqueado" in data:
+            bloqueo.bloqueado = data["bloqueado"]
+        if "nombre" in data:
+            bloqueo.nombre = data["nombre"]
+        if "servicio" in data:
+            bloqueo.servicio = data["servicio"]
 
-        bloqueo = Bloqueo.query.filter_by(fecha=fecha, hora=hora).first()
-        if not bloqueo:
-            return jsonify({"error": "Bloqueo no encontrado"}), 404
+        db.session.commit()
+        return jsonify({"message": "Bloqueo actualizado correctamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error actualizando bloqueo: {e}", exc_info=True)
+        return jsonify({"error": "Error actualizando bloqueo", "detail": str(e)}), 500
 
+@api.route("/admin/bloqueos/<int:id>", methods=["DELETE"])
+@admin_required
+def eliminar_bloqueo(id):
+    bloqueo = Bloqueo.query.get(id)
+    if not bloqueo:
+        return jsonify({"error": "Bloqueo no encontrado"}), 404
+    try:
         db.session.delete(bloqueo)
         db.session.commit()
-        return jsonify({"mensaje": "Bloqueo eliminado"}), 200
-
+        return jsonify({"message": "Bloqueo eliminado correctamente"}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        db.session.rollback()
+        current_app.logger.error(f"Error eliminando bloqueo: {e}", exc_info=True)
+        return jsonify({"error": "Error eliminando bloqueo", "detail": str(e)}), 500
 
-# --- RUTAS DE PAGO ---
 
-@api.route("/pagos", methods=["POST"])
-def crear_pago():
-    data = request.get_json()
-    monto = data.get("monto")
-    email = data.get("email")
-
-    if not monto:
-        return jsonify({"error": "Falta el monto"}), 400
-
-    if not email:
-        return jsonify({"error": "Falta el email para el pago"}), 400
-
-    try:
-        preference_data = {
-            "items": [
-                {
-                    "title": "Pago de servicio",
-                    "quantity": 1,
-                    "unit_price": float(monto),
-                    "currency_id": "ARS"
-                }
-            ],
-            "payer": {
-                "email": email
-            },
-            "back_urls": {
-                "success": "https://www.tu-sitio/success",
-                "failure": "https://www.tu-sitio/failure",
-                "pending": "https://www.tu-sitio/pendings"
-            },
-            "auto_return": "approved"
-        }
-
-        preference_response = sdk.preference().create(preference_data)
-
-        response_data = preference_response.get("response", {})
-        preference_id = response_data.get("id")
-        init_point = response_data.get("init_point")
-
-        if not preference_id or not init_point:
-            current_app.logger.error(f"Respuesta inesperada de MercadoPago: {preference_response}")
-            return jsonify({"error": "Error inesperado creando la preferencia de pago"}), 500
-
-        return jsonify({
-            "preference_id": preference_id,
-            "init_point": init_point
-        }), 200
-
-    except Exception as e:
-        current_app.logger.error(f"Error creando preferencia de pago: {e}", exc_info=True)
-        return jsonify({"error": "Error creando la preferencia de pago", "detail": str(e)}), 500
-
-# --- RUTAS DE TESTIMONIOS ---
-
-from flask import abort
+# --- RUTAS TESTIMONIOS ---
 
 @api.route('/testimonios', methods=['GET'])
 def obtener_testimonios():
-    testimonios = Testimonio.query.order_by(Testimonio.fecha.desc()).all()
-    lista = [{
-        "id": t.id,
-        "nombre": t.nombre,
-        "comentario": t.comentario,
-        "estrellas": t.estrellas,
-        "fecha": t.fecha.strftime("%Y-%m-%d"),
-    } for t in testimonios]
-    return jsonify(lista), 200
+    testimonio_list = Testimonio.query.all()
+    resultado = [t.serialize() for t in testimonio_list]
+    return jsonify({'testimonios': resultado}), 200
 
 @api.route('/testimonios', methods=['POST'])
 def crear_testimonio():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({'error': 'Datos JSON inválidos o faltantes'}), 400
-
+    data = request.get_json()
     nombre = data.get('nombre')
     comentario = data.get('comentario')
-    estrellas = data.get('estrellas', 5)
+    puntuacion = data.get('puntuacion')
 
-    if not nombre or not comentario:
-        return jsonify({'error': 'Nombre y comentario son obligatorios'}), 400
+    if not nombre or not comentario or not puntuacion:
+        return jsonify({'error': 'Faltan datos obligatorios'}), 400
 
     try:
-        estrellas = int(estrellas)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Estrellas debe ser un número entre 1 y 5'}), 400
+        puntuacion = int(puntuacion)
+    except ValueError:
+        return jsonify({'error': 'Puntuación debe ser un número entero'}), 400
 
-    if estrellas < 1 or estrellas > 5:
-        return jsonify({'error': 'Estrellas debe estar entre 1 y 5'}), 400
-
-    nuevo_testimonio = Testimonio(
-        nombre=nombre,
-        comentario=comentario,
-        estrellas=estrellas,
-        fecha=datetime.utcnow()
-    )
+    nuevo = Testimonio(nombre=nombre, comentario=comentario, puntuacion=puntuacion)
     try:
-        db.session.add(nuevo_testimonio)
+        db.session.add(nuevo)
         db.session.commit()
         return jsonify({'message': 'Testimonio creado'}), 201
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error creando testimonio: {e}")
-        return jsonify({'error': 'Error al crear testimonio'}), 500
+        current_app.logger.error(f"Error creando testimonio: {e}", exc_info=True)
+        return jsonify({'error': 'Error guardando testimonio', 'detail': str(e)}), 500
 
-@api.route('/testimonios/<int:testimonio_id>', methods=['DELETE'])
-@admin_required
-def eliminar_testimonio(testimonio_id):
-    testimonio = Testimonio.query.get(testimonio_id)
-    if not testimonio:
-        return jsonify({'error': 'Testimonio no encontrado'}), 404
+
+# --- RUTAS MERCADOPAGO ---
+
+@api.route("/api/crear-preferencia", methods=["POST"])
+def crear_preferencia():
+    datos = request.get_json()
+    items = datos.get("items", [])
+    if not items:
+        return jsonify({"error": "No se recibieron items"}), 400
+
+    preference_data = {
+        "items": items,
+        "back_urls": {
+            "success": "http://localhost:3000/success",
+            "failure": "http://localhost:3000/failure",
+            "pending": "http://localhost:3000/pending"
+        },
+        "auto_return": "approved",
+        "binary_mode": True,
+    }
 
     try:
-        db.session.delete(testimonio)
-        db.session.commit()
-        return jsonify({'message': 'Testimonio eliminado correctamente'}), 200
+        preference_response = sdk.preference().create(preference_data)
+        return jsonify(preference_response["response"]), 200
     except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error eliminando testimonio: {e}")
-        return jsonify({'error': 'Error al eliminar testimonio'}), 500
+        current_app.logger.error(f"Error creando preferencia MercadoPago: {e}")
+        return jsonify({"error": "Error creando preferencia", "detail": str(e)}), 500
