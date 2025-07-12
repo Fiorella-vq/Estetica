@@ -5,18 +5,14 @@ import Loto from "../../img/loto.png";
 
 export const Navbar = () => {
   return (
-    <nav className="navbar navbar-expand-sm">
-      <div className="container-fluid">
+    <nav className="navbar navbar-expand-sm shadow-sm">
+      <div className="container-fluid d-flex justify-content-between align-items-center">
+        
         <div className="d-flex align-items-center">
           <Link
             to="/loginAdmin"
             title="Área de administración"
-            style={{
-              fontSize: "0.9rem",
-              marginRight: "8px",
-              opacity: 0.3,
-              textDecoration: "none",
-            }}
+            className="admin-icon"
           >
             ⚙️
           </Link>
@@ -27,9 +23,8 @@ export const Navbar = () => {
               className="navbar-logo"
             />
           </Link>
+          <span className="Flor">Flor Estética Integral</span>
         </div>
-
-        <h2 className="Flor">Flor Estética Integral</h2>
 
         <button
           className="navbar-toggler"
@@ -43,18 +38,13 @@ export const Navbar = () => {
           <i className="fas fa-bars"></i>
         </button>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto">
+        <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
+          <ul className="navbar-nav">
             <li className="nav-item">
               <Link to="/sobreMi" className="nav-link">
                 Sobre mí
               </Link>
             </li>
-            {/* <li className="nav-item">
-              <Link to="/informacion-adicional" className="nav-link">
-                Información adicional
-              </Link>
-            </li> */}
             <li className="nav-item">
               <Link to="/cuponeras" className="nav-link">
                 Cuponeras
@@ -62,12 +52,12 @@ export const Navbar = () => {
             </li>
             <li className="nav-item">
               <Link to="/horariosDisponible" className="nav-link">
-                Horarios y disponibilidad
+                Horarios
               </Link>
             </li>
             <li className="nav-item">
               <Link to="/testimonios" className="nav-link">
-                Nuestros clientes
+                Clientes
               </Link>
             </li>
           </ul>

@@ -1,8 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import "../../styles/services.css";
 import CuponerasImage from "../../img/cuponeras.jpg";
 
 export const Cuponeras = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="card2">
       <div className="image-container">
@@ -17,6 +20,11 @@ export const Cuponeras = () => {
           tratamientos continuos o combinados. Consultá por beneficios
           especiales.
         </p>
+      </div>
+      <div className="btn-container">
+        <button className="btn" onClick={() => navigate("/")}>
+          Volver
+        </button>
       </div>
     </div>
   );

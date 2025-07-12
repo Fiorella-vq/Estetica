@@ -1,19 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/services.css";
 import MasajesImage from "../../img/descontracturantes.jpg";
 
+const zonasMasajes = [
+  { nombre: "Descontracturantes", precio: 1000 },
+  { nombre: "Relajantes", precio: 500 },
+  { nombre: "Piedras Calientes", precio: 700 },
+  { nombre: "Ventosas", precio: 500 },
+];
+
 export const MasajesDescontracturantes = () => {
   const navigate = useNavigate();
-  
-   const handleButtonClick = () => {
-  navigate("/calendario", {
-    state: {
-      from: "Masajes Descontracturantes",
-      precio: 700,  
-    },
-  });
-};
+
+  const [zonaSeleccionada, setZonaSeleccionada] = useState(zonasMasajes[0]);
+
+  const handleZonaChange = (e) => {
+    const seleccion = zonasMasajes.find((z) => z.nombre === e.target.value);
+    if (seleccion) setZonaSeleccionada(seleccion);
+  };
+
+  const handleButtonClick = () => {
+    navigate("/calendario", {
+      state: {
+        from: "Masajes Descontracturantes",
+        precio: zonaSeleccionada.precio,
+      },
+    });
+  };
+
   return (
     <div className="card2">
       <div className="image-container">
@@ -40,7 +55,7 @@ export const MasajesDescontracturantes = () => {
           o según lo necesite el paciente.
         </p>
         <p>
-          <strong>Precio:</strong> $700 por sesión.
+          <strong>Precio:</strong> ${zonaSeleccionada.precio} por sesión.
         </p>
         <p>
           <strong>Recomendaciones:</strong> Mantenerse hidratado después de la
@@ -55,20 +70,32 @@ export const MasajesDescontracturantes = () => {
           <strong>Resultados esperados:</strong> Reducción de dolor muscular,
           mejor flexibilidad y sensación de relajación profunda.
         </p>
-         <p>
+        <p>
           <strong>Promoción:</strong> No.
         </p>
-         <p>
+        <p>
           <strong>Zonas:</strong> Espalda, cuello, piernas, cuerpo completo.
         </p>
-       
+
+        <label htmlFor="zona">Elegí la zona:</label>
+        <select
+          id="zona"
+          value={zonaSeleccionada.nombre}
+          onChange={handleZonaChange}
+        >
+          {zonasMasajes.map((zona) => (
+            <option key={zona.nombre} value={zona.nombre}>
+              {zona.nombre} - ${zona.precio}
+            </option>
+          ))}
+        </select>
       </div>
       <div className="btn-container">
-        <button
-          className="btn"
-      onClick={handleButtonClick} 
-        >
-          Agendate!
+        <button className="btn" onClick={handleButtonClick}>
+          Agendá tu cita
+        </button>
+        <button className="btn" onClick={() => navigate("/")}>
+          Volver
         </button>
       </div>
     </div>

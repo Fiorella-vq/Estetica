@@ -1,6 +1,6 @@
 .img-chica {
   width: 100%;
-  max-width: 500px;
+  max-width: 480px;
   height: auto;
   aspect-ratio: 1 / 1;
   object-fit: cover;
@@ -20,6 +20,7 @@
   font-weight: 700;
   font-size: 2rem;
   text-align: center;
+  font-family: "Segoe UI", sans-serif;
 }
 
 .texto-sobre-mi {
@@ -27,6 +28,7 @@
   color: #444;
   line-height: 1.6;
   text-align: center;
+  font-family: "Segoe UI", sans-serif;
 }
 
 @media (min-width: 768px) {
@@ -36,6 +38,6 @@
   }
 
   .img-chica {
-    max-width: 500px;
+    max-width: 460px;
   }
 }

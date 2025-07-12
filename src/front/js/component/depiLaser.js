@@ -60,7 +60,10 @@ export const Depilaser = () => {
       </div>
       <div className="btn-container">
         <button className="btn" onClick={handleButtonClick}>
-          Agendate!
+          Agendá tu cita
+        </button>
+        <button className="btn" onClick={() => navigate("/")}>
+          Volver
         </button>
       </div>
     </div>

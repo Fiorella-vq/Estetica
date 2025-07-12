@@ -5,6 +5,9 @@
     padding: 20px;
     background-color: #ffffff;
     border: 2px solid #ffa8d9; 
+   border-radius: 15px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .image-container {
@@ -36,16 +39,26 @@
   display: flex;
   justify-content: center;  
   align-items: center;     
-  margin-top: 20px;         
+  margin-top: 20px;
+  gap: 15px;          /* 👈 asegura la separación */
+  flex-wrap: wrap;    /* 👈 para pantallas chicas */
 }
 
 .btn {
   background-color: #ffa8d9;
   color: #fff;
   border: none;
+  border-radius: 10px;
   padding: 10px 20px;
   font-size: 1rem;
-  border-radius: 5px;
   cursor: pointer;
   text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn:hover {
+  background-color: #ff8dc6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }

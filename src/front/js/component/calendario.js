@@ -20,38 +20,21 @@ export const Calendario = () => {
   // Precio inicial desde location.state o 0
   const [precioServicio, setPrecioServicio] = useState(() => location.state?.precio || 0);
 
-  const horas = [
-    "08:00",
-    "09:00",
-    "10:00",
-    "11:00",
-    "12:00",
-    "13:00",
-    "14:00",
-    "15:00",
-    "16:00",
-    "17:00",
-  ];
-
-  const formatearHora = (hora) => {
-    const [h, m] = hora.split(":");
-    return h.padStart(2, "0") + ":" + (m ? m.padStart(2, "0") : "00");
-  };
+  // Función para formatear moneda local (ARS)
+  const formatoMoneda = (valor) =>
+    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(valor);
 
   const cargarHorasDisponibles = async (nuevaFecha) => {
     try {
       const fechaISO = nuevaFecha.toISOString().slice(0, 10);
 
-      const response = await fetch(`http://localhost:3001/api/reservas?fecha=${fechaISO}`);
-      if (!response.ok) throw new Error("Error al obtener reservas");
+      const response = await fetch(`http://localhost:3001/api/horarios-disponibles?fecha=${fechaISO}`);
+      if (!response.ok) throw new Error("Error al obtener horarios disponibles");
 
       const data = await response.json();
-      const reservasDelDia = data.reservas || [];
-      const horasOcupadas = reservasDelDia.map((r) => formatearHora(r.hora));
-      const horasDiaFormateadas = horas.map(formatearHora);
+      let libres = data.horarios_disponibles || [];
 
-      let libres = horasDiaFormateadas.filter((hora) => !horasOcupadas.includes(hora));
-
+      // Filtrar las horas pasadas si la fecha es hoy
       const hoy = new Date();
       const esHoy =
         nuevaFecha.getFullYear() === hoy.getFullYear() &&
@@ -73,10 +56,10 @@ export const Calendario = () => {
         setHoraSeleccionada(null);
       }
     } catch (error) {
+      console.error("Error al cargar horarios disponibles:", error);
       Swal.fire("Error", "No se pudieron cargar las horas disponibles.", "error");
       setHorasDisponibles([]);
       setHoraSeleccionada(null);
-      console.error("Error al cargar horas disponibles:", error);
     }
   };
 
@@ -95,10 +78,6 @@ export const Calendario = () => {
   const manejarRadioChange = (e) => {
     setHoraSeleccionada(e.target.value);
   };
-
-  // Función para formatear moneda local (ARS)
-  const formatoMoneda = (valor) =>
-    new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(valor);
 
   const confirmarReserva = async () => {
     if (!nombre.trim() || !telefono.trim() || !emailCliente.trim() || !horaSeleccionada) {

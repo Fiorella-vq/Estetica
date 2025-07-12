@@ -5,15 +5,15 @@ import CejasImage from "../../img/cejas.jpg";
 
 export const PerfiladoCejas = () => {
   const navigate = useNavigate();
-  
-   const handleButtonClick = () => {
-  navigate("/calendario", {
-    state: {
-      from: "Perfilado de Cejas",
-      precio: 50,  
-    },
-  });
-};
+
+  const handleButtonClick = () => {
+    navigate("/calendario", {
+      state: {
+        from: "Perfilado de Cejas",
+        precio: 50,
+      },
+    });
+  };
 
   return (
     <div className="card2">
@@ -47,16 +47,16 @@ export const PerfiladoCejas = () => {
           <strong>Resultados esperados:</strong> Cejas más definidas y
           simétricas, con un efecto natural y duradero.
         </p>
-         <p>
+        <p>
           <strong>Promoción:</strong> No.
         </p>
       </div>
       <div className="btn-container">
-        <button
-          className="btn"
-            onClick={handleButtonClick}
-        >
-          Agendate!
+        <button className="btn" onClick={handleButtonClick}>
+          Agendá tu cita
+        </button>
+        <button className="btn" onClick={() => navigate("/")}>
+          Volver
         </button>
       </div>
     </div>

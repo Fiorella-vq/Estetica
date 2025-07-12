@@ -55,11 +55,11 @@ export const Reductores = () => {
         </p>
       </div>
       <div className="btn-container">
-        <button
-          className="btn"
-         onClick={handleButtonClick}  
-        >
-          Agendate!
+        <button className="btn" onClick={handleButtonClick}>
+          Agendá tu cita
+        </button>
+        <button className="btn" onClick={() => navigate("/")}>
+          Volver
         </button>
       </div>
     </div>
