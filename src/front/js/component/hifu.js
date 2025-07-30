@@ -9,7 +9,7 @@ export const Hifu = () => {
 
   const precios = {
     local: 3000,
-    casa: 4000, // Podés ajustar este valor si querés
+    casa: 3000, 
   };
 
   const handleButtonClick = () => {

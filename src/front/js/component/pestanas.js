@@ -4,8 +4,8 @@ import "../../styles/services.css";
 import PestañasImage from "../../img/pestanas.webp";
 
 const zonasPestanas = [
-  { nombre: "Volumen tecnológico", precio: { local: 1000, casa: 1300 } },
-  { nombre: "Lifting", precio: { local: 700, casa: 1000 } },
+  { nombre: "Volumen tecnológico", precio: { local: 1300, casa: 1100 } },
+  { nombre: "Lifting", precio: { local: 1100, casa: 850 } },
 ];
 
 export const PerfiladoPestanas = () => {
@@ -40,7 +40,7 @@ export const PerfiladoPestanas = () => {
 
         <p>
           <strong>Descripción:</strong> Lifting y extensión de pestañas para una
-          mirada más intensa y definida. Realza tu mirada con un efecto natural
+          mirada más intensa y definida. Realzá tu mirada con un efecto natural
           o dramático, según tu estilo.
         </p>
         <p>
@@ -65,7 +65,12 @@ export const PerfiladoPestanas = () => {
             id="zona"
             value={zonaSeleccionada.nombre}
             onChange={handleZonaChange}
-            style={{ padding: "0.5rem", fontSize: "1rem", borderRadius: "4px", border: "1px solid #ccc" }}
+            style={{
+              padding: "0.5rem",
+              fontSize: "1rem",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+            }}
           >
             {zonasPestanas.map((zona) => (
               <option key={zona.nombre} value={zona.nombre}>

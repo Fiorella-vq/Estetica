@@ -4,10 +4,10 @@ import "../../styles/services.css";
 import MasajesImage from "../../img/descontracturantes.jpg";
 
 const zonasMasajes = [
-  { nombre: "Descontracturantes", precio: { local: 1000, casa: 1300 } },
-  { nombre: "Relajantes", precio: { local: 800, casa: 1100 } },
-  { nombre: "Piedras Calientes", precio: { local: 1200, casa: 1500 } },
-  { nombre: "Ventosas", precio: { local: 900, casa: 1200 } },
+  { nombre: "Descontracturantes tren superior ", precio: { local: 900, casa: 750 } },
+  { nombre: "Relajantes", precio: { local: 900, casa: 750 } },
+  { nombre: "Piedras Calientes", precio: { local: 1000, casa: 850 } },
+  { nombre: "Ventosas", precio: { local: 1000, casa: 850 } },
 ];
 
 export const MasajesDescontracturantes = () => {

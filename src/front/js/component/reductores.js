@@ -5,18 +5,17 @@ import ReductoresImage from "../../img/reductores.jpg";
 
 export const Reductores = () => {
   const navigate = useNavigate();
-
   const [lugar, setLugar] = useState("local");
 
   const precios = {
-    local: 850,
-    casa: 1100, // ajustá el valor si querés otro
+    local: 950,
+    casa: 850,
   };
 
   const handleButtonClick = () => {
     navigate("/calendario", {
       state: {
-        from: "Tratamiento Reductor",
+        from: "Tratamiento Reductor (Con aparatología)",
         precio: precios[lugar],
         lugar,
       },
@@ -32,11 +31,13 @@ export const Reductores = () => {
         <h5 className="card-title2">
           <u>Tratamiento Reductor</u>
         </h5>
+        <p><em>(Con aparatología)</em></p>
+
         <p>
-          <strong>Descripción:</strong> Tratamientos para modelar el cuerpo,
-          reducir medidas y mejorar la textura de la piel. Disponibles con
-          aparatología (ultrasonido, ondas rusas, radiofrecuencia) o de forma
-          manual.
+          <strong>Descripción:</strong> Tratamiento corporal con aparatología
+          (ultrasonido, ondas rusas, radiofrecuencia) para modelar el cuerpo,
+          reducir medidas y mejorar la textura de la piel. También puede
+          realizarse de forma manual si se solicita.
         </p>
         <p>
           <strong>Duración por sesión:</strong> Aproximadamente 60 minutos.
