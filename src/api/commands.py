@@ -1,6 +1,6 @@
-# commands.py
+import os
 import click
-from api.models import db, Reserva
+from src.api.models import db, Reserva 
 
 def setup_commands(app):
     @app.cli.command("insert-test-reservas")
@@ -28,9 +28,6 @@ def setup_commands(app):
 
     @app.cli.command("show-admin")
     def show_admin():
-        
-        admin = {
-            "email": "fiorella.viscardi@gmail.com",
-            "password": "123456789"  
-        }
-        print(f"Admin configurado: {admin['email']}")
+        admin_email = os.environ.get("ADMIN_EMAIL", "fiorella.viscardi@gmail.com")
+        admin_password = os.environ.get("ADMIN_PASSWORD", "123456789")
+        print(f"Admin configurado: {admin_email}")

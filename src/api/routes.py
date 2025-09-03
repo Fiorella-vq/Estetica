@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from api.models import db, Reserva, Bloqueo, Testimonio
+from src.api.models import db, Reserva, Bloqueo, Testimonio
 from flask_cors import CORS
 from datetime import datetime, timedelta, time
 import random
@@ -15,8 +15,8 @@ import mercadopago
 # --- CONFIGURACIÓN MERCADOPAGO ---
 token = os.getenv("MP_ACCESS_TOKEN")
 if not token:
-    current_app.logger.error("MP_ACCESS_TOKEN no configurado en el entorno")
-sdk = mercadopago.SDK(token)
+    print("⚠️  MP_ACCESS_TOKEN no configurado en el entorno")  # ✅ se evita current_app aquí
+sdk = mercadopago.SDK(token) if token else None
 
 # --- BLUEPRINT ---
 api = Blueprint('api', __name__)
