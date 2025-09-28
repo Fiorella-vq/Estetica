@@ -4,5 +4,6 @@
   "workbench.editorAssociations": {
     "*.md": "vscode.markdown.preview.editor"
   },
-  "postman.settings.dotenv-detection-notification-visibility": false
+  "postman.settings.dotenv-detection-notification-visibility": false,
+  "git.ignoreLimitWarning": true
 }
