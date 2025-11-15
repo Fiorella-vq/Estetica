@@ -23,11 +23,14 @@ export const Testimonios = () => {
   const cargarTestimonios = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/testimonios");
+      const res = await fetch(
+        "https://floresteticaintegral.onrender.com/api/testimonios"
+      );
       const data = await res.json();
-      setTestimonios(data);
+      setTestimonios(data.testimonios || []);
     } catch (error) {
       console.error("Error al cargar testimonios:", error);
+      setTestimonios([]);
     } finally {
       setLoading(false);
     }
@@ -48,6 +51,12 @@ export const Testimonios = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const body = {
+      nombre: form.nombre,
+      comentario: form.comentario,
+      puntuacion: form.estrellas, // 👈 el backend espera este nombre
+    };
+
     try {
       const headers = {
         "Content-Type": "application/json",
@@ -56,11 +65,14 @@ export const Testimonios = () => {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      const res = await fetch("http://localhost:3001/api/testimonios", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        "https://floresteticaintegral.onrender.com/api/testimonios",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body),
+        }
+      );
 
       if (!res.ok) throw new Error("Error al enviar testimonio");
 
@@ -68,7 +80,7 @@ export const Testimonios = () => {
       cargarTestimonios();
     } catch (error) {
       alert("Error al enviar testimonio");
-      console.error(error);
+      console.error("Error al enviar testimonio:", error);
     }
   };
 
@@ -76,12 +88,15 @@ export const Testimonios = () => {
     if (!window.confirm("¿Seguro que querés eliminar este testimonio?")) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/testimonios/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await fetch(
+        `https://floresteticaintegral.onrender.com/api/testimonios/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!res.ok) throw new Error("Error al eliminar testimonio");
 
@@ -103,7 +118,9 @@ export const Testimonios = () => {
       <div className="row justify-content-center">
         <div className="col-md-8">
           {testimonios.length === 0 ? (
-            <div className="text-muted text-center mb-4">Aún no hay testimonios.</div>
+            <div className="text-muted text-center mb-4">
+              Aún no hay testimonios.
+            </div>
           ) : (
             <div
               id="testimonialCarousel"
@@ -121,12 +138,17 @@ export const Testimonios = () => {
                       <div className="card-body">
                         <h5 className="card-title mb-1">{t.nombre}</h5>
                         <p className="card-text mb-2">{t.comentario}</p>
-                        <div className="text-warning">{renderStars(t.estrellas)}</div>
+                        <div className="text-warning">
+                          {renderStars(t.puntuacion)}{" "}
+                          {/* 👈 cambia a puntuacion */}
+                        </div>
 
                         {isAdmin && (
                           <button
                             className="btn btn-sm btn-danger mt-2"
-                            onClick={() => handleEliminarTestimonio(t.id || t._id)}
+                            onClick={() =>
+                              handleEliminarTestimonio(t.id || t._id)
+                            }
                           >
                             Eliminar
                           </button>
@@ -190,18 +212,23 @@ export const Testimonios = () => {
               />
             </div>
 
-            <div className="mb-3">
-              <label className="form-label">Estrellas: {form.estrellas}</label>
-              <input
-                type="range"
-                className="form-range"
-                name="estrellas"
-                min="1"
-                max="5"
-                value={form.estrellas}
-                onChange={handleChange}
-              />
-              <div className="text-warning">{renderStars(form.estrellas)}</div>
+            {/* 🌟 Selector visual de estrellas */}
+            <div className="mb-3 text-center">
+              <label className="form-label d-block">Puntuación:</label>
+              <div className="rating">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span
+                    key={star}
+                    className={`star ${form.estrellas >= star ? "filled" : ""}`}
+                    onClick={() =>
+                      setForm((prev) => ({ ...prev, estrellas: star }))
+                    }
+                  >
+                    ★
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-warning">{form.estrellas} estrellas</p>
             </div>
 
             <div className="text-center">

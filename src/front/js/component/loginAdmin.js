@@ -21,11 +21,14 @@ export const LoginAdmin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3001/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const response = await fetch(
+        "https://floresteticaintegral.onrender.com/api/admin/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        }
+      );
 
       const data = await response.json();
 
@@ -38,7 +41,7 @@ export const LoginAdmin = () => {
         setLoading(false);
         return;
       }
-      
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", data.role || "admin");
 
@@ -62,7 +65,9 @@ export const LoginAdmin = () => {
     <div className="container mt-5" style={{ maxWidth: "400px" }}>
       <Link
         to="/"
-        className={`mb-3 d-inline-block text-primary text-decoration-underline ${loading ? "disabled" : ""}`}
+        className={`mb-3 d-inline-block text-primary text-decoration-underline ${
+          loading ? "disabled" : ""
+        }`}
         style={{ cursor: loading ? "not-allowed" : "pointer" }}
         aria-disabled={loading}
         tabIndex={loading ? -1 : 0}
@@ -108,11 +113,17 @@ export const LoginAdmin = () => {
               tabIndex={-1}
               disabled={loading}
             >
-              <i className={`fa ${showPassword ? "fa-eye" : "fa-eye-slash"}`}></i>
+              <i
+                className={`fa ${showPassword ? "fa-eye" : "fa-eye-slash"}`}
+              ></i>
             </button>
           </div>
         </div>
-        <button type="submit" className="btn btn-primary w-100" disabled={loading}>
+        <button
+          type="submit"
+          className="btn btn-primary w-100"
+          disabled={loading}
+        >
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>

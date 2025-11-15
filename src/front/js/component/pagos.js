@@ -15,7 +15,8 @@ export const Pagos = () => {
   const [errorEmail, setErrorEmail] = useState("");
 
   const BACKEND_URL =
-    process.env.REACT_APP_BACKEND_URL || "http://localhost:3001/api";
+    process.env.REACT_APP_BACKEND_URL ||
+    "https://floresteticaintegral.onrender.com/api";
 
   useEffect(() => {
     const fetchReserva = async () => {

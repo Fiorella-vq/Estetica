@@ -32,7 +32,7 @@ export const Calendario = () => {
       const fechaISO = nuevaFecha.toISOString().slice(0, 10);
 
       const response = await fetch(
-        `http://localhost:3001/api/horarios-disponibles?fecha=${fechaISO}`
+        `https://floresteticaintegral.onrender.com/api/horarios-disponibles?fecha=${fechaISO}`
       );
       if (!response.ok)
         throw new Error("Error al obtener horarios disponibles");
@@ -40,7 +40,6 @@ export const Calendario = () => {
       const data = await response.json();
       let libres = data.horarios_disponibles || [];
 
-    
       const hoy = new Date();
       const esHoy =
         nuevaFecha.getFullYear() === hoy.getFullYear() &&
@@ -128,7 +127,7 @@ export const Calendario = () => {
         const fechaISO = fecha.toISOString().slice(0, 10);
 
         const crearResponse = await fetch(
-          "http://localhost:3001/api/reservas",
+          "https://floresteticaintegral.onrender.com/api/reservas",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

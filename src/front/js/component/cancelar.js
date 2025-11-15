@@ -13,7 +13,7 @@ export const Cancelar = () => {
     const fetchReserva = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3001/api/reserva-por-token/${token}`
+          `https://floresteticaintegral.onrender.com/api/reserva-por-token/${token}`
         );
         const data = await res.json();
 
@@ -46,7 +46,7 @@ export const Cancelar = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/cancelar/${token}`,
+        `https://floresteticaintegral.onrender.com/api/cancelar/${token}`,
         {
           method: "PUT",
         }

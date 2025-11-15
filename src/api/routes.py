@@ -20,7 +20,7 @@ sdk = mercadopago.SDK(token) if token else None
 
 # --- BLUEPRINT ---
 api = Blueprint('api', __name__)
-CORS(api, origins=["http://localhost:3000"], supports_credentials=True)
+CORS(api, origins=["https://floresteticaintegral.onrender.com"], supports_credentials=True)
 
 # --- JWT ---
 SECRET_KEY = os.getenv('SECRET_KEY', 'mi_clave_secreta_super_segura')
@@ -154,7 +154,7 @@ def crear_reserva():
         db.session.add(reserva)
         db.session.commit()
 
-        cancel_url = f"http://localhost:3000/cancelar/{token}"
+        cancel_url = f"https://floresteticaintegral.onrender.com/cancelar/{token}"
         mensaje = (
             f"Hola {reserva.nombre},\n\n"
             f"Tu reserva para el servicio '{reserva.servicio}' fue confirmada para el {reserva.fecha.strftime('%d/%m/%Y')} a las {reserva.hora.strftime('%H:%M')}.\n"
@@ -509,18 +509,12 @@ def eliminar_bloqueo(id):
 
 # --- RUTAS TESTIMONIOS ---
 
-@api.route('/testimonios', methods=['GET'])
-def obtener_testimonios():
-    testimonio_list = Testimonio.query.all()
-    resultado = [t.serialize() for t in testimonio_list]
-    return jsonify({'testimonios': resultado}), 200
-
 @api.route('/testimonios', methods=['POST'])
 def crear_testimonio():
     data = request.get_json()
     nombre = data.get('nombre')
     comentario = data.get('comentario')
-    puntuacion = data.get('puntuacion')
+    puntuacion = data.get('puntuacion') or data.get('estrellas')  
 
     if not nombre or not comentario or not puntuacion:
         return jsonify({'error': 'Faltan datos obligatorios'}), 400
@@ -534,11 +528,12 @@ def crear_testimonio():
     try:
         db.session.add(nuevo)
         db.session.commit()
-        return jsonify({'message': 'Testimonio creado'}), 201
+        return jsonify({'message': 'Testimonio creado correctamente'}), 201
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creando testimonio: {e}", exc_info=True)
         return jsonify({'error': 'Error guardando testimonio', 'detail': str(e)}), 500
+
 
 
 # --- RUTAS MERCADOPAGO ---
@@ -553,9 +548,9 @@ def crear_preferencia():
     preference_data = {
         "items": items,
         "back_urls": {
-            "success": "http://localhost:3000/success",
-            "failure": "http://localhost:3000/failure",
-            "pending": "http://localhost:3000/pending"
+            "success": "https://floresteticaintegral.onrender.com/success",
+            "failure": "https://floresteticaintegral.onrender.com/failure",
+            "pending": "https://floresteticaintegral.onrender.com/pending"
         },
         "auto_return": "approved",
         "binary_mode": True,

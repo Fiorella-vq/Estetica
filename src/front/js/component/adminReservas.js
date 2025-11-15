@@ -5,8 +5,17 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const HORARIOS = [
-  "08:00", "09:00", "10:00", "11:00", "12:00",
-  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
 ];
 
 const SERVICIOS = [
@@ -48,12 +57,18 @@ export const AdminReservas = () => {
     const formattedDate = formatFecha(date);
     try {
       const [reservaRes, bloqueoRes] = await Promise.all([
-        fetch(`http://localhost:3001/api/admin/reservas?fecha=${formattedDate}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        fetch(`http://localhost:3001/api/admin/bloqueos?fecha=${formattedDate}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        fetch(
+          `https://floresteticaintegral.onrender.com/api/admin/reservas?fecha=${formattedDate}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
+        fetch(
+          `https://floresteticaintegral.onrender.com/api/admin/bloqueos?fecha=${formattedDate}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
       ]);
 
       if (!reservaRes.ok || !bloqueoRes.ok) {
@@ -90,7 +105,10 @@ export const AdminReservas = () => {
     }
   }, [selectedDate, token]);
 
-  const totalGanado = reservas.reduce((acc, r) => acc + (Number(r.precio) || 0), 0);
+  const totalGanado = reservas.reduce(
+    (acc, r) => acc + (Number(r.precio) || 0),
+    0
+  );
 
   // Bloquear horario
   const handleBloquearHorario = async (hora) => {
@@ -124,26 +142,33 @@ export const AdminReservas = () => {
     const formattedDate = formatFecha(selectedDate);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          fecha: formattedDate,
-          hora,
-          bloqueado: true,
-          nombre: formValues.nombre,
-          servicio: formValues.servicio,
-        }),
-      });
+      const res = await fetch(
+        `https://floresteticaintegral.onrender.com/api/admin/bloqueos`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            fecha: formattedDate,
+            hora,
+            bloqueado: true,
+            nombre: formValues.nombre,
+            servicio: formValues.servicio,
+          }),
+        }
+      );
 
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Error bloqueando horario");
 
-      Swal.fire("Hecho", `Horario ${hora} bloqueado para ${formValues.nombre}`, "success");
+      Swal.fire(
+        "Hecho",
+        `Horario ${hora} bloqueado para ${formValues.nombre}`,
+        "success"
+      );
 
       fetchData(selectedDate);
     } catch (err) {
@@ -163,20 +188,26 @@ export const AdminReservas = () => {
       let data;
 
       if (bloqueo.id) {
-        res = await fetch(`http://localhost:3001/api/admin/bloqueos/${bloqueo.id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        res = await fetch(
+          `https://floresteticaintegral.onrender.com/api/admin/bloqueos/${bloqueo.id}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         data = await res.json();
       } else {
-        res = await fetch(`http://localhost:3001/api/admin/bloqueos`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ fecha: bloqueo.fecha, hora: bloqueo.hora }),
-        });
+        res = await fetch(
+          `https://floresteticaintegral.onrender.com/api/admin/bloqueos`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ fecha: bloqueo.fecha, hora: bloqueo.hora }),
+          }
+        );
         data = await res.json();
       }
 
@@ -207,7 +238,7 @@ export const AdminReservas = () => {
     if (confirm.isConfirmed) {
       try {
         const res = await fetch(
-          `http://localhost:3001/api/admin/reservas/${reservaData.id}`,
+          `https://floresteticaintegral.onrender.com/api/admin/reservas/${reservaData.id}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
@@ -264,7 +295,10 @@ export const AdminReservas = () => {
         >
           Ir a Testimonios
         </button>
-        <button className="btn btn-outline-danger ms-auto" onClick={handleLogout}>
+        <button
+          className="btn btn-outline-danger ms-auto"
+          onClick={handleLogout}
+        >
           Cerrar Sesión
         </button>
       </div>
@@ -352,7 +386,8 @@ export const AdminReservas = () => {
                               <span className="fw-semibold">Bloqueado</span>
                               <div>
                                 <small>
-                                  <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                                  <strong>Nombre:</strong>{" "}
+                                  {bloqueoData.nombre || "-"}
                                 </small>
                                 <br />
                                 <small>
@@ -370,19 +405,25 @@ export const AdminReservas = () => {
                         <>
                           {reservado && reservaData && (
                             <div>
-                              <span className="fw-bold text-white">Reservado</span>
+                              <span className="fw-bold text-white">
+                                Reservado
+                              </span>
                               <div>
                                 <small>
-                                  <strong>Cliente:</strong> {reservaData.nombre || "-"}
+                                  <strong>Cliente:</strong>{" "}
+                                  {reservaData.nombre || "-"}
                                 </small>
                                 <br />
                                 <small>
-                                  <strong>Servicio:</strong> {reservaData.servicio || "-"}
+                                  <strong>Servicio:</strong>{" "}
+                                  {reservaData.servicio || "-"}
                                 </small>
                               </div>
                               <button
                                 className="btn btn-sm btn-outline-danger mt-1"
-                                onClick={() => handleEliminarReserva(reservaData)}
+                                onClick={() =>
+                                  handleEliminarReserva(reservaData)
+                                }
                               >
                                 Eliminar reserva
                               </button>
@@ -394,11 +435,13 @@ export const AdminReservas = () => {
                               <span className="fw-semibold">Bloqueado</span>
                               <div>
                                 <small>
-                                  <strong>Nombre:</strong> {bloqueoData.nombre || "-"}
+                                  <strong>Nombre:</strong>{" "}
+                                  {bloqueoData.nombre || "-"}
                                 </small>
                                 <br />
                                 <small>
-                                  <strong>Servicio:</strong> {bloqueoData.servicio || "-"}
+                                  <strong>Servicio:</strong>{" "}
+                                  {bloqueoData.servicio || "-"}
                                 </small>
                               </div>
                               <button
